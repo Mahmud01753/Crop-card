@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>Batch Card Sheet Maker Pro</title>
+<style>
+:root {
+--bg-dark: #090d16;
+--bg-panel: #111827;
+--bg-card: #182234;
+--bg-input: #070b12;
+--border: #2e3b52;
+--accent: #2563eb;
+--accent-hover: #1d4ed8;
+--accent-green: #059669;
+--accent-red: #dc2626;
+--accent-amber: #d97706;
+--accent-cyan: #0284c7;
+--text: #f8fafc;
+--text-muted: #94a3b8;
+--radius: 8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-dark); color: var(--text); }
+.app-root { display: flex; flex-direction: column; width: 100vw; height: 100vh; overflow: hidden; }
+.top-header { height: 48px; background: #0d1424; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 12px; flex-shrink: 0; z-index: 100; }
+.top-header h1 { font-size: 0.95rem; font-weight: 700; color: #60a5fa; display: flex; align-items: center; gap: 6px; }
+.view-switcher { display: none; gap: 4px; background: #1e293b; padding: 3px; border-radius: 6px; }
+.view-btn { background: none; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; padding: 5px 9px; border-radius: 4px; cursor: pointer; }
+.view-btn.active { background: var(--accent); color: #ffffff; }
+.badge { background: #1e293b; color: #38bdf8; font-size: 0.75rem; padding: 3px 8px; border-radius: 999px; font-weight: 700; border: 1px solid #334155; }
+.main-body { display: flex; flex: 1; width: 100%; height: calc(100vh - 48px); overflow: hidden; position: relative; }
+.sidebar { width: 440px; min-width: 350px; max-width: 480px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; height: 100%; z-index: 30; flex-shrink: 0; }
+.sidebar-content { flex: 1; overflow-y: auto; padding: 10px; }
+.sidebar-content::-webkit-scrollbar { width: 6px; }
+.sidebar-content::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+.section-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; }
+.section-header { padding: 10px 12px; background: #151e30; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; font-weight: 700; font-size: 0.82rem; color: #f1f5f9; }
+.section-header:hover { background: #1f2c44; }
+.section-header .icon { font-size: 0.75rem; transition: transform 0.2s; }
+.section-card.open .section-header .icon { transform: rotate(90deg); }
+.section-body { padding: 12px; display: none; border-top: 1px solid var(--border); }
+.section-card.open .section-body { display: block; }
+.form-group { margin-bottom: 9px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+.form-row { display: flex; gap: 6px; align-items: center; }
+.input-text, .input-select { flex: 1; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 6px 8px; font-size: 0.82rem; outline: none; width: 100%; }
+.input-text:focus, .input-select:focus { border-color: #38bdf8; }
+.file-input-wrapper { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.file-input-wrapper input[type="file"] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 100px; z-index: 10; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 8px 12px; font-size: 0.8rem; font-weight: 700; border-radius: 6px; border: none; cursor: pointer; user-select: none; text-align: center; }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--accent); color: #ffffff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-success { background: var(--accent-green); color: #ffffff; }
+.btn-success:hover { background: #047857; }
+.btn-danger { background: var(--accent-red); color: #ffffff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-amber { background: var(--accent-amber); color: #0f172a; }
+.btn-amber:hover { background: #b45309; }
+.btn-cyan { background: var(--accent-cyan); color: #ffffff; }
+.btn-cyan:hover { background: #0369a1; }
+.btn-secondary { background: #26334a; color: #f1f5f9; }
+.btn-secondary:hover { background: #334464; }
+.btn-block { width: 100%; }
+.btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+.card-list-box { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); margin-top: 6px; padding: 5px; }
+.card-item-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: #182233; border-radius: 6px; margin-bottom: 5px; font-size: 0.78rem; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+.card-item-row:last-child { margin-bottom: 0; }
+.card-item-row:hover { background: #1e2e47; }
+.card-item-row.active { border: 1px solid #38bdf8; background: #1c2b44; }
+.card-thumb-mini { width: 42px; height: 42px; object-fit: cover; border-radius: 4px; background: #000; border: 1px solid #334155; flex-shrink: 0; cursor: pointer; }
+.card-info { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.card-num-badge { background: #2a3b54; color: #93c5fd; padding: 1px 5px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; margin-right: 4px; }
+.sample-preview-container { display: flex; gap: 8px; margin-bottom: 8px; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px dashed #334155; }
+.sample-preview-box { flex: 1; text-align: center; font-size: 0.72rem; color: var(--text-muted); cursor: pointer; position: relative; background: #131b2e; padding: 6px; border-radius: 6px; border: 1px solid #23314a; }
+.sample-preview-box:hover { border-color: #38bdf8; }
+.sample-img-thumb { width: 100%; height: 75px; object-fit: contain; background: #050811; border-radius: 4px; margin-top: 4px; display: none; border: 1px solid #2e3a52; }
+.workspace { flex: 1; display: flex; flex-direction: column; height: 100%; background: #040711; position: relative; overflow: hidden; }
+.workspace-toolbar { height: 44px; background: #0d131f; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 12px; z-index: 10; flex-shrink: 0; }
+.toolbar-group { display: flex; align-items: center; gap: 6px; }
+.zoom-text { font-size: 0.78rem; font-weight: 700; color: #cbd5e1; min-width: 40px; text-align: center; }
+.viewport { flex: 1; overflow: hidden; position: relative; cursor: grab; user-select: none; touch-action: none; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #101726 10%, #050811 90%); }
+.viewport:active { cursor: grabbing; }
+.canvas-container { position: absolute; transform-origin: center center; display: flex; flex-direction: column; gap: 24px; padding: 20px; }
+.sheet-page-wrapper { position: relative; background: #ffffff; box-shadow: 0 6px 30px rgba(0,0,0,0.85); overflow: hidden; flex-shrink: 0; }
+.sheet-canvas { display: block; width: 100%; height: 100%; }
+.page-interactive-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+.interactive-element { position: absolute; pointer-events: auto; cursor: move; box-sizing: border-box; }
+.interactive-element.active { outline: 2px dashed #2563eb; }
+.resize-handle { position: absolute; width: 22px; height: 22px; background: #ffffff; border: 3.5px solid #0284c7; border-radius: 50%; pointer-events: auto; touch-action: none; z-index: 70; box-shadow: 0 0 8px rgba(0,0,0,0.8); }
+.resize-handle::after { content: ''; position: absolute; top: -12px; left: -12px; right: -12px; bottom: -12px; }
+.handle-nw { top: -11px; left: -11px; cursor: nwse-resize; }
+.handle-n  { top: -11px; left: calc(50% - 11px); cursor: ns-resize; }
+.handle-ne { top: -11px; right: -11px; cursor: nesw-resize; }
+.handle-w  { top: calc(50% - 11px); left: -11px; cursor: ew-resize; }
+.handle-e  { top: calc(50% - 11px); right: -11px; cursor: ew-resize; }
+.handle-sw { bottom: -11px; left: -11px; cursor: nesw-resize; }
+.handle-s  { bottom: -11px; left: calc(50% - 11px); cursor: ns-resize; }
+.handle-se { bottom: -11px; right: -11px; cursor: nwse-resize; }
+.modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(2, 6, 17, 0.98); z-index: 2000; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+.modal-backdrop.active { display: flex; }
+.modal-window { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; width: 100vw; height: 100vh; max-width: 100vw; max-height: 100vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+@media (min-width: 901px) { .modal-window { width: 95vw; max-width: 1200px; height: 94vh; border-radius: 12px; } }
+.modal-header { height: 48px; padding: 0 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #0d131f; flex-shrink: 0; z-index: 50; }
+.modal-stage { flex: 1; width: 100%; height: 100%; background: #02050c; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; padding: 10px 10px 75px 10px; touch-action: none; }
+.crop-stage-container { position: relative; display: inline-block; box-shadow: 0 0 40px rgba(0,0,0,0.9); user-select: none; touch-action: none; max-width: 100%; max-height: 100%; }
+.crop-stage-img { display: block; max-width: 100%; max-height: 100%; pointer-events: none; object-fit: contain; }
+.crop-overlay-box { position: absolute; border: 2.5px solid #38bdf8; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.72); cursor: move; box-sizing: border-box; touch-action: none; }
+.crop-grid { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+.crop-grid::before { content: ''; position: absolute; top: 33.333%; left: 0; right: 0; height: 1px; background: rgba(255, 255, 255, 0.45); box-shadow: 0 33.333% 0 rgba(255, 255, 255, 0.45); }
+.crop-grid::after { content: ''; position: absolute; left: 33.333%; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, 0.45); box-shadow: 33.333% 0 0 rgba(255, 255, 255, 0.45); }
+.crop-floating-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: #0d1424; border-top: 1px solid #2e3b52; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; gap: 6px; z-index: 100; box-shadow: 0 -8px 25px rgba(0,0,0,0.85); }
+.crop-bar-btn { flex: 1; height: 44px; font-size: 0.82rem; font-weight: 700; border-radius: 8px; }
+.crop-options-drawer { position: absolute; bottom: 60px; left: 0; right: 0; background: #141c2c; border-top: 2px solid #38bdf8; box-shadow: 0 -12px 40px rgba(0,0,0,0.9); padding: 12px 14px; display: none; flex-direction: column; gap: 8px; z-index: 95; max-height: 70vh; overflow-y: auto; }
+.crop-options-drawer.active { display: flex; }
+.crop-inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.crop-input-cell { background: #0b111e; padding: 6px; border-radius: 6px; border: 1px solid #23314a; }
+.crop-input-cell label { display: block; font-size: 0.68rem; font-weight: 700; color: #93c5fd; margin-bottom: 2px; text-transform: uppercase; }
+.crop-input-cell input { width: 100%; background: #141c2c; border: 1px solid #334155; color: #ffffff; padding: 5px; border-radius: 4px; font-size: 0.82rem; outline: none; }
+.toast-box { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #0284c7; color: #ffffff; padding: 10px 20px; border-radius: 8px; font-size: 0.86rem; font-weight: 700; box-shadow: 0 6px 25px rgba(0,0,0,0.7); z-index: 9999; display: none; }
+.app-dialog-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.85); z-index: 99999; display: none; align-items: center; justify-content: center; }
+.app-dialog-backdrop.active { display: flex; }
+.app-dialog-box { background: #182234; border: 1px solid #38bdf8; border-radius: 10px; padding: 20px; width: 90%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.9); color: #fff; }
+.app-dialog-title { font-size: 1rem; font-weight: 700; color: #38bdf8; margin-bottom: 8px; }
+.app-dialog-msg { font-size: 0.84rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 16px; }
+.progress-bar-container { position: fixed; bottom: 20px; right: 20px; background: #1e293b; border: 1px solid #38bdf8; border-radius: 8px; padding: 10px 16px; color: #fff; display: none; align-items: center; gap: 10px; z-index: 3000; box-shadow: 0 8px 30px rgba(0,0,0,0.8); }
+.spinner { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 900px) {
+.view-switcher { display: flex; }
+.main-body { flex-direction: column; }
+.sidebar { width: 100%; max-width: 100%; height: 50%; border-right: none; border-bottom: 1px solid var(--border); }
+.workspace { width: 100%; height: 50%; }
+.main-body.mode-controls .sidebar { height: 100%; display: flex; }
+.main-body.mode-controls .workspace { display: none; }
+.main-body.mode-preview .sidebar { display: none; }
+.main-body.mode-preview .workspace { height: 100%; display: flex; }
+.main-body.mode-split .sidebar { height: 50%; display: flex; }
+.main-body.mode-split .workspace { height: 50%; display: flex; }
+}
+</style>
+</head>
+<body>
+<div class="app-root">
+<header class="top-header">
+<h1>🗎 Batch Card Maker Pro</h1>
+<div class="view-switcher" id="mobileViewSwitcher">
+<button type="button" class="view-btn" id="btnModeControls" onclick="setAppViewMode('controls')">⚙️ Settings</button>
+<button type="button" class="view-btn" id="btnModePreview" onclick="setAppViewMode('preview')">👁️ Preview</button>
+<button type="button" class="view-btn active" id="btnModeSplit" onclick="setAppViewMode('split')">⊞ Split</button>
+</div>
+<div style="display:flex; align-items:center; gap:8px;">
+<span class="badge" id="cardCounterBadge">0 Cards</span>
+</div>
+</header>
+<div class="main-body mode-split" id="mainBodyContainer">
+<aside class="sidebar" id="sidebarSection">
+<div class="sidebar-content">
+<div class="section-card open">
+<div class="section-header" onclick="toggleSection(this)">
+<span>1. CARDS / IMAGES (ছবি আপলোড ও কার্ড লিস্ট)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="btn-group" style="margin-bottom: 8px;">
+<label class="btn btn-primary file-input-wrapper" style="flex:2; font-weight:700;">
+➕ ADD CARDS (ছবি সিলেক্ট করুন)
+<input type="file" id="multiImageInput" multiple accept="image/*" onchange="handleNativeImageUpload(this)">
+</label>
+<button type="button" class="btn btn-secondary" style="flex:1" onclick="selectAllCards(true)">SELECT ALL</button>
+<button type="button" class="btn btn-secondary" style="flex:1" onclick="selectAllCards(false)">UNSELECT</button>
+</div>
+<div class="btn-group" style="margin-bottom: 8px;">
+<button type="button" class="btn btn-success btn-block" onclick="addSelectedToPage()">ADD SELECTED TO PAGE</button>
+</div>
+<div class="btn-group" style="margin-bottom: 8px;">
+<button type="button" class="btn btn-secondary" style="flex:1; padding:6px 2px;" onclick="moveSelectedCard(-1)">◀ MOVE</button>
+<button type="button" class="btn btn-secondary" style="flex:1; padding:6px 2px;" onclick="moveSelectedCard(1)">MOVE ▶</button>
+<button type="button" class="btn btn-secondary" style="flex:1; padding:6px 2px;" onclick="moveSelectedCardToExtreme(true)">FRONT</button>
+<button type="button" class="btn btn-secondary" style="flex:1; padding:6px 2px;" onclick="moveSelectedCardToExtreme(false)">BACK</button>
+</div>
+<div style="font-size:0.72rem; color:#38bdf8; margin-bottom:4px; font-weight:600;">
+💡 যেকোনো কার্ডের ছবির উপর ট্যাপ করলেই সেই কার্ডের ক্রপ স্টুডিও ওপেন হবে।
+</div>
+<div class="card-list-box" id="cardListContainer">
+<div style="text-align:center; color:var(--text-muted); padding:20px; font-size:0.8rem;">
+No cards added yet. Click "+ ADD CARDS" above.
+</div>
+</div>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header" onclick="toggleSection(this)">
+<span>2. CARD SETTINGS (সাইজ ও গ্যাপ)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Card Size</label>
+<div class="form-row">
+<input type="text" class="input-text" id="cardWidthInput" value="54" placeholder="Width">
+<span style="font-size:0.8rem; color:var(--text-muted);">×</span>
+<input type="text" class="input-text" id="cardHeightInput" value="86" placeholder="Height">
+<select class="input-select" id="cardDimUnit" style="width:75px; flex:none;">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+<option value="PX">PX</option>
+</select>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Gap Between Cards</label>
+<div class="form-row">
+<input type="text" class="input-text" id="cardGapHInput" value="3" placeholder="Horizontal Gap">
+<input type="text" class="input-text" id="cardGapVInput" value="3" placeholder="Vertical Gap">
+<select class="input-select" id="cardGapUnit" style="width:75px; flex:none;">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+<option value="PX">PX</option>
+</select>
+</div>
+</div>
+<button type="button" class="btn btn-primary btn-block" onclick="applyCardSettings()">APPLY CARD</button>
+</div>
+</div>
+<div class="section-card open">
+<div class="section-header" onclick="toggleSection(this)">
+<span>3. CROP STUDIO & TEMPLATE (ক্রপ ও ফ্রেম)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<button type="button" class="btn btn-primary btn-block" style="margin-bottom:8px; font-weight:700;" onclick="openCropEditorForFirstCard()">
+🔍 OPEN CROP STUDIO (VIEW & ADJUST)
+</button>
+<div class="btn-group" style="margin-bottom:10px;">
+<button type="button" class="btn btn-success" style="flex:1; font-size:0.75rem;" onclick="applySavedTemplateToAll()">
+✂️ APPLY TEMPLATE TO ALL
+</button>
+<button type="button" class="btn btn-secondary" style="flex:1; font-size:0.75rem;" onclick="resetAllCardCrops()">
+🔄 RESET CROPS
+</button>
+</div>
+<div class="sample-preview-container">
+<div class="sample-preview-box" id="sampleFullBox" onclick="openSampleInCropStudio('full')" title="ট্যাপ করে ক্রপ অ্যাডজাস্ট করুন">
+Full Sample
+<img id="thumbFullSample" class="sample-img-thumb" alt="Full Preview">
+<span class="sample-click-tag" id="tagFullClick" style="display:none; font-size:0.65rem; color:#38bdf8; font-weight:700; margin-top:3px;">👆 ট্যাপ করে ক্রপ করুন</span>
+</div>
+<div class="sample-preview-box" id="sampleCropBox" onclick="openSampleInCropStudio('crop')" title="ট্যাপ করে ক্রপ অ্যাডজাস্ট করুন">
+Crop Sample
+<img id="thumbCropSample" class="sample-img-thumb" alt="Crop Preview">
+<span class="sample-click-tag" id="tagCropClick" style="display:none; font-size:0.65rem; color:#38bdf8; font-weight:700; margin-top:3px;">👆 ট্যাপ করে ক্রপ করুন</span>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Full Sample (Original Uncropped)</label>
+<input type="file" id="fullSampleInput" accept="image/*" class="input-text" onchange="previewSampleImage(this, 'thumbFullSample', 'tagFullClick')">
+</div>
+<div class="form-group">
+<label class="form-label">Crop Sample (Target Portion)</label>
+<input type="file" id="cropSampleInput" accept="image/*" class="input-text" onchange="previewSampleImage(this, 'thumbCropSample', 'tagCropClick')">
+</div>
+<button type="button" class="btn btn-amber btn-block" onclick="createCropTemplate()">
+⚡ AUTO-MATCH TEMPLATE (NCC)
+</button>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header" onclick="toggleSection(this)">
+<span>4. SELECTIVE CROP (আলাদা ইনপুট ট্রিম)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Card Numbers (e.g. 1, 3, 5 or 1-5 or all)</label>
+<input type="text" class="input-text" id="selectiveCardsInput" placeholder="1, 3, 5 or 1-5">
+</div>
+<div class="form-group">
+<label class="form-label">Unit</label>
+<select class="input-select" id="selectiveUnit">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+<option value="PX">PX</option>
+<option value="PERCENT">%</option>
+</select>
+</div>
+<div class="crop-inputs-grid" style="margin-bottom:8px;">
+<div class="crop-input-cell"><label>TOP (উপর)</label><input type="text" id="selectiveTopInput" value="0"></div>
+<div class="crop-input-cell"><label>BOTTOM (নিচ)</label><input type="text" id="selectiveBottomInput" value="0"></div>
+<div class="crop-input-cell"><label>LEFT (বাম)</label><input type="text" id="selectiveLeftInput" value="0"></div>
+<div class="crop-input-cell"><label>RIGHT (ডান)</label><input type="text" id="selectiveRightInput" value="0"></div>
+</div>
+<button type="button" class="btn btn-primary btn-block" onclick="applySelectiveCrop()">APPLY SELECTIVE CROP</button>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header" onclick="toggleSection(this)">
+<span>5. CARD STROKE (বর্ডার)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Target Cards</label>
+<select class="input-select" id="strokeTargetType" onchange="onStrokeTargetChange()">
+<option value="ALL">ALL CARDS</option>
+<option value="SINGLE">SINGLE CARD</option>
+<option value="CUSTOM">SERIAL CUSTOM (e.g. 2, 5, 8)</option>
+</select>
+</div>
+<div class="form-group" id="strokeCardsInputGroup" style="display:none;">
+<label class="form-label">Card Numbers</label>
+<input type="text" class="input-text" id="strokeCardsInput" placeholder="2, 5, 8">
+</div>
+<div class="form-group">
+<label class="form-label">Stroke Width & Color</label>
+<div class="form-row">
+<input type="text" class="input-text" id="strokeWidthInput" value="1" placeholder="Width">
+<select class="input-select" id="strokeWidthUnit" style="width:70px; flex:none;">
+<option value="PX" selected>PX</option>
+<option value="MM">MM</option>
+</select>
+<input type="color" id="strokeColorInput" value="#000000" style="width:40px; height:34px; border:none; background:none; cursor:pointer;">
+</div>
+</div>
+<button type="button" class="btn btn-primary btn-block" onclick="applyStroke()">APPLY STROKE</button>
+</div>
+</div>
+<div class="section-card open">
+<div class="section-header" onclick="toggleSection(this)">
+<span>6. ROW LAYOUT & FIT (লাইন ও সাইজ)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Cards Per Row (e.g. 5,5 or 5,4,3 or 10)</label>
+<input type="text" class="input-text" id="rowLayoutInput" value="5,5" placeholder="5,5">
+</div>
+<div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:8px; background:#1b2436; padding:8px 10px; border-radius:6px; border:1px solid #334155;">
+<input type="checkbox" id="forceOnePageCheckbox" checked onchange="state.forceOnePage = this.checked; updateSheetLayout();" style="width:16px; height:16px; cursor:pointer;">
+<label for="forceOnePageCheckbox" style="font-size:0.8rem; font-weight:600; color:#93c5fd; cursor:pointer; user-select:none;">সব কার্ড ১ পেজে অটো ফিট (Auto Fit on 1 Page)</label>
+</div>
+<div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:6px; background:#1b2436; padding:8px 10px; border-radius:6px; border:1px solid #334155;">
+<input type="checkbox" id="stretchWidthCheckbox" onchange="state.stretchWidth = this.checked; updateSheetLayout();" style="width:16px; height:16px; cursor:pointer;">
+<label for="stretchWidthCheckbox" style="font-size:0.8rem; font-weight:600; color:#38bdf8; cursor:pointer; user-select:none;">মার্জিন পর্যন্ত প্রসারিত করুন (Fill Margin Width)</label>
+</div>
+<button type="button" class="btn btn-primary btn-block" style="margin-top:6px;" onclick="updateSheetLayout()">APPLY ROW LAYOUT</button>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header" onclick="toggleSection(this)">
+<span>7. PAGE SETTINGS (পেজ সাইজ ও মার্জিন)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="btn-group" style="margin-bottom:10px;">
+<button type="button" class="btn btn-secondary" style="flex:1" onclick="setPresetPage('A4')">A4</button>
+<button type="button" class="btn btn-secondary" style="flex:1" onclick="setPresetPage('A3')">A3</button>
+<button type="button" class="btn btn-secondary" style="flex:1" onclick="setPresetPage('A5')">A5</button>
+<button type="button" class="btn btn-secondary" style="flex:1" onclick="setPresetPage('LETTER')">LETTER</button>
+<button type="button" class="btn btn-secondary" style="flex:1" onclick="setPresetPage('LEGAL')">LEGAL</button>
+</div>
+<div class="form-group">
+<label class="form-label">Orientation</label>
+<select class="input-select" id="pageOrientation" onchange="onPageOrientationChange()">
+<option value="portrait" selected>Portrait</option>
+<option value="landscape">Landscape</option>
+</select>
+</div>
+<div class="form-group">
+<label class="form-label">Custom Page Dimensions</label>
+<div class="form-row">
+<input type="text" class="input-text" id="pageWidthInput" value="210">
+<span style="font-size:0.8rem; color:var(--text-muted);">×</span>
+<input type="text" class="input-text" id="pageHeightInput" value="297">
+<select class="input-select" id="pageSizeUnit" style="width:75px; flex:none;">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+</select>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Margins (Top, Bottom, Left, Right)</label>
+<div class="form-row" style="margin-bottom:6px;">
+<input type="text" class="input-text" id="marginTopInput" value="5" placeholder="Top">
+<input type="text" class="input-text" id="marginBottomInput" value="5" placeholder="Bottom">
+</div>
+<div class="form-row">
+<input type="text" class="input-text" id="marginLeftInput" value="5" placeholder="Left">
+<input type="text" class="input-text" id="marginRightInput" value="5" placeholder="Right">
+<select class="input-select" id="marginUnit" style="width:75px; flex:none;">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+</select>
+</div>
+</div>
+<button type="button" class="btn btn-primary btn-block" onclick="applyPageSettings()">APPLY PAGE</button>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header" onclick="toggleSection(this)">
+<span>8. HEADER & FOOTER</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Header Text</label>
+<input type="text" class="input-text" id="headerTextInput" placeholder="Batch Name / Header">
+</div>
+<div class="form-group">
+<label class="form-label">Header Height</label>
+<div class="form-row">
+<input type="text" class="input-text" id="headerHeightInput" value="0" placeholder="0">
+<select class="input-select" id="headerHeightUnit" style="width:75px; flex:none;">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+</select>
+</div>
+</div>
+<button type="button" class="btn btn-primary btn-block" style="margin-bottom:12px;" onclick="applyHeader()">APPLY HEADER</button>
+<div class="form-group">
+<label class="form-label">Footer Text</label>
+<input type="text" class="input-text" id="footerTextInput" placeholder="Contact details / Footer">
+</div>
+<div class="form-group">
+<label class="form-label">Footer Height</label>
+<div class="form-row">
+<input type="text" class="input-text" id="footerHeightInput" value="0" placeholder="0">
+<select class="input-select" id="footerHeightUnit" style="width:75px; flex:none;">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+</select>
+</div>
+</div>
+<button type="button" class="btn btn-primary btn-block" onclick="applyFooter()">APPLY FOOTER</button>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header" onclick="toggleSection(this)">
+<span>9. BACKGROUND</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Background Color</label>
+<div class="form-row">
+<input type="color" id="bgColorInput" value="#ffffff" style="width:44px; height:34px; border:none; background:none; cursor:pointer;">
+<input type="text" class="input-text" id="bgColorHex" value="#ffffff">
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Full Page Background Image</label>
+<input type="file" id="bgImageInput" accept="image/*" class="input-text">
+</div>
+<button type="button" class="btn btn-primary btn-block" onclick="applyBackground()">APPLY BACKGROUND</button>
+</div>
+</div>
+<div class="section-card">
+<div class="section-header" onclick="toggleSection(this)">
+<span>10. LOGO OVERLAY</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Upload Logo</label>
+<input type="file" id="logoImageInput" accept="image/*" class="input-text">
+</div>
+<div class="form-group">
+<label class="form-label">Dimensions</label>
+<div class="form-row">
+<input type="text" class="input-text" id="logoWidthInput" value="30" placeholder="Width">
+<span style="font-size:0.8rem; color:var(--text-muted);">×</span>
+<input type="text" class="input-text" id="logoHeightInput" value="30" placeholder="Height">
+<select class="input-select" id="logoUnit" style="width:75px; flex:none;">
+<option value="MM" selected>MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+<option value="PX">PX</option>
+</select>
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Position (X, Y)</label>
+<div class="form-row">
+<input type="text" class="input-text" id="logoXInput" value="10" placeholder="X">
+<input type="text" class="input-text" id="logoYInput" value="10" placeholder="Y">
+</div>
+</div>
+<div class="form-group">
+<label class="form-label">Opacity (<span id="logoOpacityVal">100</span>%)</label>
+<input type="range" id="logoOpacityInput" min="0" max="100" value="100" style="width:100%" oninput="document.getElementById('logoOpacityVal').innerText=this.value; onLogoControlsChange();">
+</div>
+<div class="form-group" style="display:flex; align-items:center; gap:8px;">
+<input type="checkbox" id="logoLockRatio" checked onchange="state.logo.lockRatio = this.checked">
+<label for="logoLockRatio" style="font-size:0.8rem; cursor:pointer;">LOCK RATIO</label>
+</div>
+<div class="btn-group">
+<button type="button" class="btn btn-primary" style="flex:1" onclick="applyLogo()">APPLY LOGO</button>
+<button type="button" class="btn btn-amber" style="flex:1" onclick="adjustAllLogo()">ADJUST ALL</button>
+</div>
+</div>
+</div>
+<div class="section-card open">
+<div class="section-header" onclick="toggleSection(this)">
+<span>11. EXPORT & PDF (ডাউনলোড - সর্বোচ্চ রেজোলিউশন)</span>
+<span class="icon">▶</span>
+</div>
+<div class="section-body">
+<div class="form-group">
+<label class="form-label">Export DPI (Resolution)</label>
+<select class="input-select" id="exportDpiSelect">
+<option value="300" selected>300 DPI (High Quality Print - 2480×3508 A4)</option>
+<option value="600">600 DPI (Ultra Precision HD - 4960×7016 A4)</option>
+<option value="150">150 DPI (Fast / Screen)</option>
+</select>
+</div>
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:8px;">
+<button type="button" class="btn btn-primary" onclick="exportImage('PNG', false)">EXPORT PNG</button>
+<button type="button" class="btn btn-success" onclick="exportImage('PNG', true)">HQ PNG (100%)</button>
+<button type="button" class="btn btn-primary" onclick="exportImage('JPEG', false)">EXPORT JPG</button>
+<button type="button" class="btn btn-success" onclick="exportImage('JPEG', true)">HQ JPG (100%)</button>
+</div>
+<button type="button" class="btn btn-cyan btn-block" style="margin-bottom:6px;" onclick="exportOriginalCroppedCards()">
+🌟 EXPORT INDIVIDUAL CROPPED CARDS (ORIGINAL 4K/6K)
+</button>
+<button type="button" class="btn btn-amber btn-block" style="margin-bottom:6px;" onclick="previewPdfModal()">
+📖 PDF PREVIEW
+</button>
+<button type="button" class="btn btn-danger btn-block" onclick="exportFullPdf()">
+📥 EXPORT MULTI-PAGE PDF
+</button>
+</div>
+</div>
+</div>
+</aside>
+<main class="workspace" id="workspaceSection">
+<div class="workspace-toolbar">
+<div class="toolbar-group">
+<button type="button" class="btn btn-secondary" onclick="zoomChange(-0.15)">🔍 -</button>
+<span class="zoom-text" id="zoomPercentage">80%</span>
+<button type="button" class="btn btn-secondary" onclick="zoomChange(0.15)">🔍 +</button>
+<button type="button" class="btn btn-secondary" onclick="zoomReset()">FIT</button>
+<button type="button" class="btn btn-secondary" onclick="zoomSet(1)">100%</button>
+</div>
+<div class="toolbar-group">
+<span id="pageCountLabel" style="font-size:0.82rem; font-weight:700; color:#38bdf8;">Pages: 0</span>
+<button type="button" class="btn btn-secondary" onclick="resetProjectConfirm()" style="margin-left:6px; background:#451a1a; color:#fca5a5;">RESET</button>
+</div>
+</div>
+<div class="viewport" id="viewportArea">
+<div class="canvas-container" id="canvasContainer"></div>
+</div>
+</main>
+</div>
+</div>
+<div class="modal-backdrop" id="cropModal">
+<div class="modal-window">
+<div class="modal-header">
+<h3 style="color:#38bdf8; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="cropModalTitle">Card Crop Studio</h3>
+<button type="button" class="btn btn-secondary" style="padding:5px 10px; font-size:0.75rem;" onclick="closeCropModal()">✕ CLOSE</button>
+</div>
+<div class="modal-stage" id="cropModalStage">
+<div class="crop-stage-container" id="cropStageContainer">
+<img id="cropModalImg" class="crop-stage-img" alt="Crop Target">
+<div class="crop-overlay-box" id="cropOverlayBox">
+<div class="crop-grid"></div>
+<div class="resize-handle handle-nw" data-handle="nw"></div>
+<div class="resize-handle handle-n" data-handle="n"></div>
+<div class="resize-handle handle-ne" data-handle="ne"></div>
+<div class="resize-handle handle-w" data-handle="w"></div>
+<div class="resize-handle handle-e" data-handle="e"></div>
+<div class="resize-handle handle-sw" data-handle="sw"></div>
+<div class="resize-handle handle-s" data-handle="s"></div>
+<div class="resize-handle handle-se" data-handle="se"></div>
+</div>
+</div>
+</div>
+<div class="crop-options-drawer" id="cropOptionsDrawer">
+<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #23314a; padding-bottom:6px;">
+<span style="font-size:0.8rem; font-weight:700; color:#38bdf8;">ম্যানুয়াল পরিমাপ (ইনপুট)</span>
+<button type="button" class="btn btn-secondary" style="padding:3px 8px; font-size:0.72rem;" onclick="toggleCropOptionsDrawer(false)">🔽 মেনু নিচে নামান</button>
+</div>
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<label class="form-label" style="margin:0;">Unit:</label>
+<select class="input-select" id="cropManualUnit" style="width:110px; padding:3px 6px; font-size:0.75rem;" onchange="onCropUnitChange()">
+<option value="PX" selected>PX</option>
+<option value="MM">MM</option>
+<option value="CM">CM</option>
+<option value="INCH">INCH</option>
+</select>
+</div>
+<div class="crop-inputs-grid">
+<div class="crop-input-cell"><label>TOP (উপর)</label><input type="text" id="cropInputTop"></div>
+<div class="crop-input-cell"><label>BOTTOM (নিচ)</label><input type="text" id="cropInputBottom"></div>
+<div class="crop-input-cell"><label>LEFT (বাম)</label><input type="text" id="cropInputLeft"></div>
+<div class="crop-input-cell"><label>RIGHT (ডান)</label><input type="text" id="cropInputRight"></div>
+</div>
+<div style="display:flex; gap:6px; align-items:center;">
+<input type="text" class="input-text" id="cropCustomCardsInput" placeholder="Custom Card (e.g. 1, 3, 5)" style="font-size:0.75rem; padding:5px 7px;">
+<button type="button" class="btn btn-amber" style="padding:6px 10px; font-size:0.75rem; white-space:nowrap;" onclick="applyCropToCustomCards()">কাস্টম কার্ডে দিন</button>
+</div>
+</div>
+<div class="crop-floating-bar">
+<button type="button" class="btn btn-secondary crop-bar-btn" id="btnToggleCropDrawer" onclick="toggleCropOptionsDrawer()">⚙️ ইনপুট মেনু ▲</button>
+<button type="button" class="btn btn-primary crop-bar-btn" onclick="applyCropToThisCard()">🎯 এই কার্ড</button>
+<button type="button" class="btn btn-success crop-bar-btn" style="flex:1.5; font-size:0.86rem; background:#059669;" onclick="applyCropToAllCards()">✨ সব কার্ডে ক্রপ (APPLY ALL)</button>
+</div>
+</div>
+</div>
+<div class="modal-backdrop" id="pdfPreviewModal">
+<div class="modal-window">
+<div class="modal-header">
+<h3 style="color:#38bdf8; font-size:1.05rem;">PDF Pages Preview</h3>
+<button type="button" class="btn btn-secondary" onclick="closePdfPreviewModal()">✕ CLOSE</button>
+</div>
+<div class="modal-body" style="background:#090d14; padding:20px; overflow-y:auto; display:flex; flex-direction:column; align-items:center; gap:20px;" id="pdfPreviewContainer"></div>
+</div>
+</div>
+<div class="app-dialog-backdrop" id="appDialogModal">
+<div class="app-dialog-box">
+<div class="app-dialog-title" id="appDialogTitle">Notification</div>
+<div class="app-dialog-msg" id="appDialogMessage">Message text</div>
+<div style="display:flex; justify-content:flex-end; gap:8px;">
+<button type="button" class="btn btn-secondary" id="appDialogCancelBtn" onclick="closeAppDialog(false)">Cancel</button>
+<button type="button" class="btn btn-primary" id="appDialogOkBtn" onclick="closeAppDialog(true)">OK</button>
+</div>
+</div>
+</div>
+<div class="progress-bar-container" id="progressBarNotification">
+<div class="spinner"></div>
+<div id="progressText" style="font-size:0.85rem; font-weight:600;">Processing...</div>
+</div>
+<div class="toast-box" id="appToast">Notification</div>
+<script>
+var DPI_SCREEN = 96;
+var MM_PER_INCH = 25.4;
+var state = {
+cards: [],
+selectedCardIds: new Set(),
+activeCardIndex: 0,
+cropTemplate: null,
+sampleFullImg: null,
+sampleCropImg: null,
+cardSettings: { width: 54, height: 86, unit: 'MM', gapH: 3, gapV: 3, gapUnit: 'MM' },
+rowPattern: [5, 5],
+forceOnePage: true,
+stretchWidth: false,
+page: { preset: 'A4', orientation: 'portrait', width: 210, height: 297, unit: 'MM', marginTop: 5, marginBottom: 5, marginLeft: 5, marginRight: 5, marginUnit: 'MM' },
+header: { text: '', height: 0, unit: 'MM' },
+footer: { text: '', height: 0, unit: 'MM' },
+background: { color: '#ffffff', image: null },
+logo: { image: null, width: 30, height: 30, unit: 'MM', x: 10, y: 10, opacity: 100, lockRatio: true, aspectRatio: 1 },
+stroke: { targetType: 'ALL', targetCards: [], width: 1, unit: 'PX', color: '#000000' },
+viewport: { scale: 0.8, panX: 0, panY: 0, isPanning: false, startX: 0, startY: 0 },
+pagesData: []
+};
+var dialogCallback = null;
+function showAppAlert(title, msg) {
+var modal = document.getElementById('appDialogModal');
+document.getElementById('appDialogTitle').innerText = title || 'Notification';
+document.getElementById('appDialogMessage').innerText = msg;
+document.getElementById('appDialogCancelBtn').style.display = 'none';
+document.getElementById('appDialogOkBtn').innerText = 'OK';
+dialogCallback = null;
+modal.classList.add('active');
+}
+function showAppConfirm(title, msg, onConfirm) {
+var modal = document.getElementById('appDialogModal');
+document.getElementById('appDialogTitle').innerText = title || 'Confirm Action';
+document.getElementById('appDialogMessage').innerText = msg;
+document.getElementById('appDialogCancelBtn').style.display = 'inline-flex';
+document.getElementById('appDialogOkBtn').innerText = 'Proceed';
+dialogCallback = onConfirm;
+modal.classList.add('active');
+}
+function closeAppDialog(isOk) {
+var modal = document.getElementById('appDialogModal');
+modal.classList.remove('active');
+if (isOk && typeof dialogCallback === 'function') { dialogCallback(); }
+dialogCallback = null;
+}
+function showToastNotification(msg) {
+var toast = document.getElementById('appToast');
+toast.innerText = msg;
+toast.style.display = 'block';
+setTimeout(function() { toast.style.display = 'none'; }, 2600);
+}
+function setAppViewMode(mode) {
+var container = document.getElementById('mainBodyContainer');
+var bControls = document.getElementById('btnModeControls');
+var bPreview = document.getElementById('btnModePreview');
+var bSplit = document.getElementById('btnModeSplit');
+container.classList.remove('mode-controls', 'mode-preview', 'mode-split');
+bControls.classList.remove('active');
+bPreview.classList.remove('active');
+bSplit.classList.remove('active');
+if (mode === 'controls') {
+container.classList.add('mode-controls');
+bControls.classList.add('active');
+} else if (mode === 'preview') {
+container.classList.add('mode-preview');
+bPreview.classList.add('active');
+setTimeout(zoomReset, 50);
+} else {
+container.classList.add('mode-split');
+bSplit.classList.add('active');
+setTimeout(zoomReset, 50);
+}
+}
+function toggleCropOptionsDrawer(forceState) {
+var drawer = document.getElementById('cropOptionsDrawer');
+var btn = document.getElementById('btnToggleCropDrawer');
+var shouldOpen = (typeof forceState === 'boolean') ? forceState : !drawer.classList.contains('active');
+if (shouldOpen) {
+drawer.classList.add('active');
+btn.innerText = '⚙️ ইনপুট মেনু ▼';
+} else {
+drawer.classList.remove('active');
+btn.innerText = '⚙️ ইনপুট মেনু ▲';
+}
+}
+function convertToMm(val, unit) {
+var v = parseFloat(val) || 0;
+var u = String(unit || 'MM').toUpperCase();
+if (u === 'MM') return v;
+if (u === 'CM') return v * 10;
+if (u === 'INCH') return v * MM_PER_INCH;
+if (u === 'PX') return (v / DPI_SCREEN) * MM_PER_INCH;
+return v;
+}
+function convertFromMm(mmVal, targetUnit) {
+var u = String(targetUnit || 'MM').toUpperCase();
+if (u === 'MM') return mmVal;
+if (u === 'CM') return mmVal / 10;
+if (u === 'INCH') return mmVal / MM_PER_INCH;
+if (u === 'PX') return (mmVal / MM_PER_INCH) * DPI_SCREEN;
+return mmVal;
+}
+function unitToPixels(val, unit, dpi) {
+dpi = dpi || DPI_SCREEN;
+var mm = convertToMm(val, unit);
+var inches = mm / MM_PER_INCH;
+return inches * dpi;
+}
+function bindSafeNumberInput(inputId, onValidChange) {
+var el = document.getElementById(inputId);
+if (!el) return;
+el.addEventListener('input', function(e) {
+var raw = e.target.value.trim();
+if (raw === '' || raw === '-' || raw === '.' || (raw.length > 1 && raw.lastIndexOf('.') === raw.length - 1)) return;
+var num = parseFloat(raw);
+if (!isNaN(num)) { onValidChange(num); }
+});
+el.addEventListener('blur', function(e) {
+var raw = e.target.value.trim();
+var num = parseFloat(raw);
+if (isNaN(num)) { e.target.value = '0'; onValidChange(0); }
+});
+}
+function updateCardThumbnail(card) {
+try {
+var c = card.crop || { nx: 0, ny: 0, nw: 1, nh: 1 };
+var sx = Math.max(0, c.nx * card.originalWidth);
+var sy = Math.max(0, c.ny * card.originalHeight);
+var sw = Math.max(1, Math.min(card.originalWidth - sx, c.nw * card.originalWidth));
+var sh = Math.max(1, Math.min(card.originalHeight - sy, c.nh * card.originalHeight));
+var tCanvas = document.createElement('canvas');
+tCanvas.width = 100;
+var targetH = Math.round(100 * (sh / sw)) || 100;
+tCanvas.height = Math.min(150, Math.max(60, targetH));
+var tCtx = tCanvas.getContext('2d');
+tCtx.imageSmoothingEnabled = true;
+tCtx.imageSmoothingQuality = 'high';
+tCtx.drawImage(card.originalImg, sx, sy, sw, sh, 0, 0, tCanvas.width, tCanvas.height);
+card.thumbnailDataUrl = tCanvas.toDataURL('image/jpeg', 0.88);
+} catch(e) {}
+}
+function handleNativeImageUpload(inputEl) {
+if (!inputEl.files || inputEl.files.length === 0) return;
+var filesArray = [];
+for (var i = 0; i < inputEl.files.length; i++) { filesArray.push(inputEl.files[i]); }
+addImagesBatch(filesArray);
+inputEl.value = '';
+}
+function addImagesBatch(fileList) {
+if (!fileList || fileList.length === 0) return;
+showProgress('Loading 0 / ' + fileList.length + ' cards...');
+var currentIndex = 0;
+function loadNextCard() {
+if (currentIndex >= fileList.length) {
+hideProgress();
+renumberCards();
+renderCardListUI();
+updateSheetLayout();
+zoomReset();
+showToastNotification(fileList.length + ' টি কার্ড যোগ হয়েছে!');
+return;
+}
+var file = fileList[currentIndex];
+currentIndex++;
+showProgress('Loading card ' + currentIndex + ' / ' + fileList.length + '...');
+var reader = new FileReader();
+reader.onload = function(ev) {
+var dataUri = ev.target.result;
+var img = new Image();
+img.onload = function() {
+var cardObj = {
+id: 'card_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+cardNum: state.cards.length + 1,
+name: file.name,
+file: file,
+originalWidth: img.naturalWidth || img.width,
+originalHeight: img.naturalHeight || img.height,
+originalImg: img,
+thumbnailDataUrl: dataUri,
+crop: state.cropTemplate ? Object.assign({}, state.cropTemplate) : { nx: 0, ny: 0, nw: 1, nh: 1 },
+stroke: null
+};
+updateCardThumbnail(cardObj);
+state.cards.push(cardObj);
+state.selectedCardIds.add(cardObj.id);
+setTimeout(loadNextCard, 10);
+};
+img.onerror = function() { setTimeout(loadNextCard, 10); };
+img.src = dataUri;
+};
+reader.onerror = function() { setTimeout(loadNextCard, 10); };
+reader.readAsDataURL(file);
+}
+loadNextCard();
+}
+function renumberCards() {
+for (var i = 0; i < state.cards.length; i++) { state.cards[i].cardNum = i + 1; }
+document.getElementById('cardCounterBadge').innerText = state.cards.length + ' Cards';
+}
+function renderCardListUI() {
+var container = document.getElementById('cardListContainer');
+if (state.cards.length === 0) {
+container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px; font-size:0.8rem;">No cards added yet. Click "+ ADD CARDS" above.</div>';
+return;
+}
+var html = '';
+for (var idx = 0; idx < state.cards.length; idx++) {
+var card = state.cards[idx];
+var isSelected = state.selectedCardIds.has(card.id);
+var isActive = state.activeCardIndex === idx;
+html += '<div class="card-item-row ' + (isActive ? 'active' : '') + '" onclick="onCardRowClicked(' + idx + ', event)">';
+html += '<input type="checkbox" ' + (isSelected ? 'checked' : '') + ' onclick="toggleCardCheck('' + card.id + '', event)">';
+html += '<img class="card-thumb-mini" src="' + card.thumbnailDataUrl + '" alt="Card" onclick="openCardCropModal(' + idx + ', event)" title="ট্যাপ করে ক্রপ করুন">';
+html += '<div class="card-info">';
+html += '<div><span class="card-num-badge">#' + card.cardNum + '</span><strong>' + card.name + '</strong></div>';
+html += '<div style="color:var(--text-muted); font-size:0.7rem;">' + card.originalWidth + ' × ' + card.originalHeight + ' px</div>';
+html += '</div>';
+html += '<button type="button" class="btn btn-cyan" style="padding:4px 8px; font-size:0.7rem;" onclick="openCardCropModal(' + idx + ', event)">✂️ CROP</button>';
+html += '<button type="button" class="btn btn-danger" style="padding:4px 8px; font-size:0.7rem;" onclick="removeCard(\'' + card.id + '\', event)">✕</button>';
+html += '</div>';
+}
+container.innerHTML = html;
+}
+function onCardRowClicked(idx, event) {
+if (event.target.tagName === 'INPUT' || event.target.tagName === 'BUTTON') return;
+state.activeCardIndex = idx;
+renderCardListUI();
+openCardCropModal(idx, event);
+}
+function toggleCardCheck(id, event) {
+if (event) event.stopPropagation();
+if (state.selectedCardIds.has(id)) { state.selectedCardIds.delete(id); }
+else { state.selectedCardIds.add(id); }
+updateSheetLayout();
+}
+function selectAllCards(select) {
+if (select) {
+for (var i = 0; i < state.cards.length; i++) { state.selectedCardIds.add(state.cards[i].id); }
+} else {
+state.selectedCardIds.clear();
+}
+renderCardListUI();
+updateSheetLayout();
+}
+function addSelectedToPage() {
+if (state.selectedCardIds.size === 0) {
+showAppAlert('No Cards Selected', 'Please select at least one card to add to the sheet.');
+return;
+}
+updateSheetLayout();
+if (window.innerWidth <= 900) { setAppViewMode('preview'); }
+}
+function removeCard(id, event) {
+if (event) event.stopPropagation();
+var idx = -1;
+for (var i = 0; i < state.cards.length; i++) {
+if (state.cards[i].id === id) { idx = i; break; }
+}
+if (idx !== -1) {
+state.selectedCardIds.delete(id);
+state.cards.splice(idx, 1);
+renumberCards();
+renderCardListUI();
+updateSheetLayout();
+}
+}
+function moveSelectedCard(offset) {
+var idx = state.activeCardIndex;
+if (idx < 0 || idx >= state.cards.length) return;
+var newIdx = idx + offset;
+if (newIdx < 0 || newIdx >= state.cards.length) return;
+var item = state.cards.splice(idx, 1)[0];
+state.cards.splice(newIdx, 0, item);
+state.activeCardIndex = newIdx;
+renumberCards();
+renderCardListUI();
+updateSheetLayout();
+}
+function moveSelectedCardToExtreme(toFront) {
+var idx = state.activeCardIndex;
+if (idx < 0 || idx >= state.cards.length) return;
+var item = state.cards.splice(idx, 1)[0];
+if (toFront) { state.cards.unshift(item); state.activeCardIndex = 0; }
+else { state.cards.push(item); state.activeCardIndex = state.cards.length - 1; }
+renumberCards();
+renderCardListUI();
+updateSheetLayout();
+}
+function previewSampleImage(inputEl, targetImgId, targetTagId) {
+if (inputEl.files && inputEl.files[0]) {
+var file = inputEl.files[0];
+loadImageFromFile(file).then(function(img) {
+if (targetImgId === 'thumbFullSample') { state.sampleFullImg = img; }
+else { state.sampleCropImg = img; }
+var imgEl = document.getElementById(targetImgId);
+imgEl.src = img.src;
+imgEl.style.display = 'block';
+if (targetTagId) document.getElementById(targetTagId).style.display = 'block';
+});
+}
+}
+function openSampleInCropStudio(type) {
+var targetImg = (type === 'crop') ? state.sampleCropImg : state.sampleFullImg;
+if (!targetImg) {
+var fileInput = document.getElementById((type === 'crop') ? 'cropSampleInput' : 'fullSampleInput');
+if (fileInput.files && fileInput.files[0]) {
+loadImageFromFile(fileInput.files[0]).then(function(img) {
+if (type === 'crop') state.sampleCropImg = img;
+else state.sampleFullImg = img;
+openSampleObjectInCropStudio(img, (type === 'crop') ? 'Crop Sample' : 'Full Sample');
+});
+return;
+}
+showAppAlert('No Sample', 'অনুগ্রহ করে প্রথমে একটি ' + (type === 'crop' ? 'Crop Sample' : 'Full Sample') + ' আপলোড করুন।');
+return;
+}
+openSampleObjectInCropStudio(targetImg, (type === 'crop') ? 'Crop Sample' : 'Full Sample');
+}
+function openSampleObjectInCropStudio(img, title) {
+var sampleCard = {
+cardNum: 1,
+name: title,
+originalWidth: img.naturalWidth || img.width,
+originalHeight: img.naturalHeight || img.height,
+originalImg: img,
+crop: state.cropTemplate ? Object.assign({}, state.cropTemplate) : { nx: 0, ny: 0, nw: 1, nh: 1 },
+isSample: true
+};
+openCropModalWithCardObject(sampleCard);
+}
+function createCropTemplate() {
+var fullFileInput = document.getElementById('fullSampleInput');
+var cropFileInput = document.getElementById('cropSampleInput');
+if (!fullFileInput.files || fullFileInput.files.length === 0 || !cropFileInput.files || cropFileInput.files.length === 0) {
+showAppAlert('Missing Samples', 'অনুগ্রহ করে Full Sample এবং Crop Sample ফাইল দুটিই সিলেক্ট করুন।');
+return;
+}
+showProgress('Analyzing features with NCC matching...');
+Promise.all([
+loadImageFromFile(fullFileInput.files[0]),
+loadImageFromFile(cropFileInput.files[0])
+]).then(function(imgs) {
+var fullImg = imgs[0];
+var cropImg = imgs[1];
+state.sampleFullImg = fullImg;
+state.sampleCropImg = cropImg;
+var matchResult = performTemplateMatching(fullImg, cropImg);
+hideProgress();
+if (matchResult) {
+state.cropTemplate = {
+nx: matchResult.x / fullImg.naturalWidth,
+ny: matchResult.y / fullImg.naturalHeight,
+nw: matchResult.w / fullImg.naturalWidth,
+nh: matchResult.h / fullImg.naturalHeight
+};
+showAppAlert('Matching Complete', 'Region detected successfully. Opening Crop Studio...');
+openCropEditorForFirstCard();
+} else {
+showAppAlert('Matching Failed', 'Could not detect template match. Opening Crop Studio for manual adjustment.');
+openCropEditorForFirstCard();
+}
+}).catch(function(err) {
+hideProgress();
+showAppAlert('Error', 'Error reading sample images: ' + err);
+});
+}
+function loadImageFromFile(file) {
+return new Promise(function(resolve, reject) {
+var reader = new FileReader();
+reader.onload = function(e) {
+var img = new Image();
+img.onload = function() { resolve(img); };
+img.onerror = reject;
+img.src = e.target.result;
+};
+reader.onerror = reject;
+reader.readAsDataURL(file);
+});
+}
+function performTemplateMatching(fullImg, cropImg) {
+var searchMax = 250;
+var scale = Math.min(searchMax / fullImg.naturalWidth, searchMax / fullImg.naturalHeight, 1);
+var sW = Math.round(fullImg.naturalWidth * scale);
+var sH = Math.round(fullImg.naturalHeight * scale);
+var tW = Math.round(cropImg.naturalWidth * scale);
+var tH = Math.round(cropImg.naturalHeight * scale);
+if (tW > sW || tH > sH || tW <= 4 || tH <= 4) {
+return { x: 0, y: 0, w: cropImg.naturalWidth, h: cropImg.naturalHeight };
+}
+var fullCanvas = document.createElement('canvas');
+fullCanvas.width = sW; fullCanvas.height = sH;
+var fCtx = fullCanvas.getContext('2d');
+fCtx.drawImage(fullImg, 0, 0, sW, sH);
+var fData = fCtx.getImageData(0, 0, sW, sH).data;
+var cropCanvas = document.createElement('canvas');
+cropCanvas.width = tW; cropCanvas.height = tH;
+var cCtx = cropCanvas.getContext('2d');
+cCtx.drawImage(cropImg, 0, 0, tW, tH);
+var cData = cCtx.getImageData(0, 0, tW, tH).data;
+var fGray = new Float32Array(sW * sH);
+for (var i = 0, j = 0; i < fData.length; i += 4, j++) {
+fGray[j] = 0.299 * fData[i] + 0.587 * fData[i+1] + 0.114 * fData[i+2];
+}
+var cGray = new Float32Array(tW * tH);
+var tMean = 0;
+for (var ci = 0, cj = 0; ci < cData.length; ci += 4, cj++) {
+var g = 0.299 * cData[ci] + 0.587 * cData[ci+1] + 0.114 * cData[ci+2];
+cGray[cj] = g;
+tMean += g;
+}
+tMean /= (tW * tH);
+var tVar = 0;
+for (var vi = 0; vi < cGray.length; vi++) {
+cGray[vi] -= tMean;
+tVar += cGray[vi] * cGray[vi];
+}
+var bestScore = -1e9;
+var bestX = 0, bestY = 0;
+var step = 2;
+for (var y = 0; y <= sH - tH; y += step) {
+for (var x = 0; x <= sW - tW; x += step) {
+var score = 0, fMean = 0;
+for (var ty = 0; ty < tH; ty += 4) {
+for (var tx = 0; tx < tW; tx += 4) {
+fMean += fGray[(y + ty) * sW + (x + tx)];
+}
+}
+fMean /= ((tH / 4) * (tW / 4));
+var sVar = 0;
+for (var sty = 0; sty < tH; sty += 4) {
+var fy = y + sty;
+for (var stx = 0; stx < tW; stx += 4) {
+var fx = x + stx;
+var fv = fGray[fy * sW + fx] - fMean;
+var cv = cGray[sty * tW + stx];
+score += fv * cv;
+sVar += fv * fv;
+}
+}
+var denom = Math.sqrt(sVar * tVar);
+var ncc = denom > 0 ? (score / denom) : 0;
+if (ncc > bestScore) { bestScore = ncc; bestX = x; bestY = y; }
+}
+}
+return {
+x: bestX / scale,
+y: bestY / scale,
+w: cropImg.naturalWidth,
+h: cropImg.naturalHeight
+};
+}
+var cropState = {
+activeCardIndex: 0,
+card: null,
+imgDisplayWidth: 0,
+imgDisplayHeight: 0,
+stageScale: 1,
+left: 0, top: 0, width: 100, height: 100,
+isDraggingBox: false,
+isDraggingHandle: null,
+startX: 0, startY: 0,
+initLeft: 0, initTop: 0, initW: 0, initH: 0
+};
+function openCropEditorForFirstCard() {
+if (state.cards.length === 0) {
+if (state.sampleCropImg) { openSampleObjectInCropStudio(state.sampleCropImg, 'Crop Sample'); return; }
+if (state.sampleFullImg) { openSampleObjectInCropStudio(state.sampleFullImg, 'Full Sample'); return; }
+var fullInput = document.getElementById('fullSampleInput');
+if (fullInput.files && fullInput.files[0]) {
+loadImageFromFile(fullInput.files[0]).then(function(img) {
+state.sampleFullImg = img;
+openSampleObjectInCropStudio(img, 'Full Sample');
+});
+return;
+}
+showAppAlert('No Cards', 'No cards or samples found. Please click "+ ADD CARDS" or select a sample image first.');
+return;
+}
+var firstIdx = 0;
+for (var i = 0; i < state.cards.length; i++) {
+if (state.selectedCardIds.has(state.cards[i].id)) { firstIdx = i; break; }
+}
+openCardCropModal(firstIdx);
+}
+function openCardCropModal(cardIndex, event) {
+if (event) event.stopPropagation();
+if (cardIndex < 0 || cardIndex >= state.cards.length) return;
+cropState.activeCardIndex = cardIndex;
+openCropModalWithCardObject(state.cards[cardIndex]);
+}
+function openCropModalWithCardObject(card) {
+cropState.card = card;
+var modal = document.getElementById('cropModal');
+var modalImg = document.getElementById('cropModalImg');
+var titleEl = document.getElementById('cropModalTitle');
+titleEl.innerText = (card.isSample ? card.name : ('Card #' + card.cardNum + ' (' + card.name + ')')) + ' - Crop Studio';
+modal.classList.add('active');
+toggleCropOptionsDrawer(false);
+if (modalImg.src !== card.originalImg.src) {
+modalImg.onload = function() { recalculateCropStageScale(); };
+modalImg.src = card.originalImg.src;
+} else {
+setTimeout(recalculateCropStageScale, 50);
+}
+setupCropDragListeners();
+}
+function recalculateCropStageScale() {
+var modalImg = document.getElementById('cropModalImg');
+var card = cropState.card;
+if (!card) return;
+var rect = modalImg.getBoundingClientRect();
+var displayW = rect.width || modalImg.clientWidth;
+var displayH = rect.height || modalImg.clientHeight;
+if (!displayW || displayW < 50) {
+displayW = modalImg.naturalWidth ? Math.min(window.innerWidth * 0.85, modalImg.naturalWidth) : 400;
+displayH = modalImg.naturalHeight ? (displayW * (modalImg.naturalHeight / modalImg.naturalWidth)) : 400;
+}
+cropState.imgDisplayWidth = displayW;
+cropState.imgDisplayHeight = displayH;
+cropState.stageScale = displayW / card.originalWidth;
+var cropNorm = card.crop || state.cropTemplate || { nx: 0, ny: 0, nw: 1, nh: 1 };
+cropState.left = Math.round(cropNorm.nx * card.originalWidth);
+cropState.top = Math.round(cropNorm.ny * card.originalHeight);
+cropState.width = Math.round(cropNorm.nw * card.originalWidth);
+cropState.height = Math.round(cropNorm.nh * card.originalHeight);
+cropState.left = Math.max(0, Math.min(card.originalWidth - 10, cropState.left || 0));
+cropState.top = Math.max(0, Math.min(card.originalHeight - 10, cropState.top || 0));
+cropState.width = Math.max(10, Math.min(card.originalWidth - cropState.left, cropState.width || card.originalWidth));
+cropState.height = Math.max(10, Math.min(card.originalHeight - cropState.top, cropState.height || card.originalHeight));
+updateCropOverlayDOM();
+syncCropBoxToManualInputs();
+}
+function closeCropModal() {
+document.getElementById('cropModal').classList.remove('active');
+toggleCropOptionsDrawer(false);
+}
+function updateCropOverlayDOM() {
+var box = document.getElementById('cropOverlayBox');
+var scale = cropState.stageScale || 1;
+box.style.left = (cropState.left * scale) + 'px';
+box.style.top = (cropState.top * scale) + 'px';
+box.style.width = (cropState.width * scale) + 'px';
+box.style.height = (cropState.height * scale) + 'px';
+}
+function syncCropBoxToManualInputs() {
+var card = cropState.card;
+if (!card) return;
+var unit = document.getElementById('cropManualUnit').value;
+var rightDist = card.originalWidth - (cropState.left + cropState.width);
+var bottomDist = card.originalHeight - (cropState.top + cropState.height);
+document.getElementById('cropInputTop').value = formatUnitVal(convertPixelsToUnit(cropState.top, unit));
+document.getElementById('cropInputBottom').value = formatUnitVal(convertPixelsToUnit(bottomDist, unit));
+document.getElementById('cropInputLeft').value = formatUnitVal(convertPixelsToUnit(cropState.left, unit));
+document.getElementById('cropInputRight').value = formatUnitVal(convertPixelsToUnit(rightDist, unit));
+}
+function convertPixelsToUnit(pixels, unit) {
+if (unit === 'PX') return pixels;
+var mm = (pixels / DPI_SCREEN) * MM_PER_INCH;
+return convertFromMm(mm, unit);
+}
+function convertUnitToOriginalPixels(val, unit) {
+if (unit === 'PX') return val;
+var mm = convertToMm(val, unit);
+return (mm / MM_PER_INCH) * DPI_SCREEN;
+}
+function formatUnitVal(v) { return Number.isInteger(v) ? v.toString() : parseFloat(v.toFixed(2)).toString(); }
+function onCropUnitChange() { syncCropBoxToManualInputs(); }
+function setupManualCropInputBindings() {
+var sides = ['Top', 'Bottom', 'Left', 'Right'];
+for (var i = 0; i < sides.length; i++) {
+bindSafeNumberInput('cropInput' + sides[i], function() { applyManualInputsToCropBox(); });
+}
+}
+function applyManualInputsToCropBox() {
+var card = cropState.card;
+if (!card) return;
+var unit = document.getElementById('cropManualUnit').value;
+var topVal = parseFloat(document.getElementById('cropInputTop').value) || 0;
+var bottomVal = parseFloat(document.getElementById('cropInputBottom').value) || 0;
+var leftVal = parseFloat(document.getElementById('cropInputLeft').value) || 0;
+var rightVal = parseFloat(document.getElementById('cropInputRight').value) || 0;
+var topPx = Math.max(0, convertUnitToOriginalPixels(topVal, unit));
+var bottomPx = Math.max(0, convertUnitToOriginalPixels(bottomVal, unit));
+var leftPx = Math.max(0, convertUnitToOriginalPixels(leftVal, unit));
+var rightPx = Math.max(0, convertUnitToOriginalPixels(rightVal, unit));
+var newW = card.originalWidth - leftPx - rightPx;
+var newH = card.originalHeight - topPx - bottomPx;
+if (newW >= 10 && newH >= 10) {
+cropState.left = Math.round(leftPx);
+cropState.top = Math.round(topPx);
+cropState.width = Math.round(newW);
+cropState.height = Math.round(newH);
+updateCropOverlayDOM();
+}
+}
+var cropListenersAttached = false;
+function setupCropDragListeners() {
+if (cropListenersAttached) return;
+cropListenersAttached = true;
+var box = document.getElementById('cropOverlayBox');
+box.onpointerdown = function(e) {
+if (e.target.classList.contains('resize-handle')) return;
+cropState.isDraggingBox = true;
+cropState.isDraggingHandle = null;
+cropState.startX = e.clientX;
+cropState.startY = e.clientY;
+cropState.initLeft = cropState.left;
+cropState.initTop = cropState.top;
+box.setPointerCapture(e.pointerId);
+e.stopPropagation();
+};
+var handles = box.querySelectorAll('.resize-handle');
+for (var i = 0; i < handles.length; i++) {
+(function(handle) {
+handle.onpointerdown = function(e) {
+cropState.isDraggingHandle = handle.getAttribute('data-handle');
+cropState.isDraggingBox = false;
+cropState.startX = e.clientX;
+cropState.startY = e.clientY;
+cropState.initLeft = cropState.left;
+cropState.initTop = cropState.top;
+cropState.initW = cropState.width;
+cropState.initH = cropState.height;
+handle.setPointerCapture(e.pointerId);
+e.stopPropagation();
+};
+})(handles[i]);
+}
+window.addEventListener('pointermove', function(e) {
+var card = cropState.card;
+if (!card) return;
+var scale = cropState.stageScale || 1;
+if (cropState.isDraggingBox) {
+var dx = (e.clientX - cropState.startX) / scale;
+var dy = (e.clientY - cropState.startY) / scale;
+var nextLeft = Math.round(cropState.initLeft + dx);
+var nextTop = Math.round(cropState.initTop + dy);
+nextLeft = Math.max(0, Math.min(card.originalWidth - cropState.width, nextLeft));
+nextTop = Math.max(0, Math.min(card.originalHeight - cropState.height, nextTop));
+cropState.left = nextLeft;
+cropState.top = nextTop;
+updateCropOverlayDOM();
+syncCropBoxToManualInputs();
+} else if (cropState.isDraggingHandle) {
+var hdx = (e.clientX - cropState.startX) / scale;
+var hdy = (e.clientY - cropState.startY) / scale;
+var h = cropState.isDraggingHandle;
+var l = cropState.initLeft, t = cropState.initTop, w = cropState.initW, ht = cropState.initH;
+if (h.indexOf('e') !== -1) { w = Math.max(10, Math.min(card.originalWidth - l, cropState.initW + hdx)); }
+if (h.indexOf('w') !== -1) {
+var newL = Math.max(0, Math.min(cropState.initLeft + cropState.initW - 10, cropState.initLeft + hdx));
+w = cropState.initW + (cropState.initLeft - newL);
+l = newL;
+}
+if (h.indexOf('s') !== -1) { ht = Math.max(10, Math.min(card.originalHeight - t, cropState.initH + hdy)); }
+if (h.indexOf('n') !== -1) {
+var newT = Math.max(0, Math.min(cropState.initTop + cropState.initH - 10, cropState.initTop + hdy));
+ht = cropState.initH + (cropState.initTop - newT);
+t = newT;
+}
+cropState.left = Math.round(l);
+cropState.top = Math.round(t);
+cropState.width = Math.round(w);
+cropState.height = Math.round(ht);
+updateCropOverlayDOM();
+syncCropBoxToManualInputs();
+}
+});
+window.addEventListener('pointerup', function() {
+cropState.isDraggingBox = false;
+cropState.isDraggingHandle = null;
+});
+}
+function getCurrentCropNormalized() {
+var card = cropState.card;
+if (!card || !card.originalWidth || !card.originalHeight) return { nx: 0, ny: 0, nw: 1, nh: 1 };
+var nx = Math.max(0, Math.min(0.98, cropState.left / card.originalWidth));
+var ny = Math.max(0, Math.min(0.98, cropState.top / card.originalHeight));
+var nw = Math.max(0.02, Math.min(1 - nx, cropState.width / card.originalWidth));
+var nh = Math.max(0.02, Math.min(1 - ny, cropState.height / card.originalHeight));
+return { nx: nx, ny: ny, nw: nw, nh: nh };
+}
+function applyCropToThisCard() {
+if (!cropState.card) return;
+var cropNorm = getCurrentCropNormalized();
+if (!cropState.card.isSample) {
+cropState.card.crop = Object.assign({}, cropNorm);
+updateCardThumbnail(cropState.card);
+renderCardListUI();
+updateSheetLayout();
+} else {
+state.cropTemplate = Object.assign({}, cropNorm);
+}
+closeCropModal();
+showToastNotification('ক্রপ সফলভাবে প্রযোজ্য হয়েছে!');
+}
+function applyCropToCustomCards() {
+var inputStr = document.getElementById('cropCustomCardsInput').value;
+var numbers = parseCardNumberList(inputStr);
+if (numbers.length === 0) {
+showAppAlert('Input Required', 'অনুগ্রহ করে কার্ডের নম্বর উল্লেখ করুন (যেমন: 1, 3, 5)।');
+return;
+}
+var cropNorm = getCurrentCropNormalized();
+var count = 0;
+for (var i = 0; i < state.cards.length; i++) {
+var card = state.cards[i];
+if (numbers.indexOf(card.cardNum) !== -1) {
+card.crop = Object.assign({}, cropNorm);
+updateCardThumbnail(card);
+count++;
+}
+}
+if (count === 0) {
+showAppAlert('No Match', 'আপনার দেয়া নম্বরের সাথে কোনো কার্ড মেলেনি।');
+return;
+}
+renderCardListUI();
+updateSheetLayout();
+closeCropModal();
+showToastNotification(count + ' টি কার্ডে কাস্টম ক্রপ প্রযোজ্য হয়েছে!');
+}
+function applyCropToAllCards() {
+var cropNorm = getCurrentCropNormalized();
+state.cropTemplate = Object.assign({}, cropNorm);
+for (var i = 0; i < state.cards.length; i++) {
+state.cards[i].crop = Object.assign({}, cropNorm);
+updateCardThumbnail(state.cards[i]);
+state.selectedCardIds.add(state.cards[i].id);
+}
+renderCardListUI();
+updateSheetLayout();
+closeCropModal();
+showToastNotification('সবগুলো (' + state.cards.length + ' টি) কার্ডে এক সাথে ক্রপ সফলভাবে প্রযোজ্য হয়েছে!');
+}
+function applySavedTemplateToAll() {
+if (!state.cropTemplate) {
+showAppAlert('No Template', 'কোনো ক্রপ টেমপ্লেট পাওয়া যায়নি। প্রথমে CROP STUDIO থেকে টেমপ্লেট সেট করুন।');
+return;
+}
+for (var i = 0; i < state.cards.length; i++) {
+state.cards[i].crop = Object.assign({}, state.cropTemplate);
+updateCardThumbnail(state.cards[i]);
+}
+renderCardListUI();
+updateSheetLayout();
+showToastNotification('টেমপ্লেট অনুযায়ী সব কার্ড ক্রপ করা হয়েছে!');
+}
+function resetAllCardCrops() {
+showAppConfirm('Reset Crops', 'আপনি কি সব কার্ডের ক্রপ রিসেট করে মূল ছবিতে ফিরিয়ে আনতে চান?', function() {
+for (var i = 0; i < state.cards.length; i++) {
+state.cards[i].crop = { nx: 0, ny: 0, nw: 1, nh: 1 };
+updateCardThumbnail(state.cards[i]);
+}
+renderCardListUI();
+updateSheetLayout();
+showToastNotification('সব কার্ডের ক্রপ রিসেট হয়েছে!');
+});
+}
+function parseCardNumberList(str) {
+if (!str) return [];
+var result = []; var set = new Set();
+var parts = str.split(/[, ]+/);
+for (var i = 0; i < parts.length; i++) {
+var p = parts[i].trim();
+if (!p) continue;
+if (p.toLowerCase() === 'all') {
+for (var k = 0; k < state.cards.length; k++) { set.add(state.cards[k].cardNum); }
+break;
+}
+if (p.indexOf('-') !== -1) {
+var range = p.split('-');
+var start = parseInt(range[0], 10); var end = parseInt(range[1], 10);
+if (!isNaN(start) && !isNaN(end)) {
+var min = Math.min(start, end); var max = Math.max(start, end);
+for (var r = min; r <= max; r++) set.add(r);
+}
+} else {
+var num = parseInt(p, 10);
+if (!isNaN(num)) set.add(num);
+}
+}
+set.forEach(function(val) { result.push(val); });
+return result;
+}
+function applySelectiveCrop() {
+var cardNums = parseCardNumberList(document.getElementById('selectiveCardsInput').value);
+if (cardNums.length === 0) {
+showAppAlert('Input Required', 'Please enter target card numbers.');
+return;
+}
+var topAmt = parseFloat(document.getElementById('selectiveTopInput').value) || 0;
+var bottomAmt = parseFloat(document.getElementById('selectiveBottomInput').value) || 0;
+var leftAmt = parseFloat(document.getElementById('selectiveLeftInput').value) || 0;
+var rightAmt = parseFloat(document.getElementById('selectiveRightInput').value) || 0;
+var unit = document.getElementById('selectiveUnit').value;
+var applied = 0;
+for (var i = 0; i < state.cards.length; i++) {
+var card = state.cards[i];
+if (cardNums.indexOf(card.cardNum) !== -1) {
+var fracTop = 0, fracBottom = 0, fracLeft = 0, fracRight = 0;
+if (unit === 'PERCENT' || unit === '%') {
+fracTop = topAmt / 100; fracBottom = bottomAmt / 100; fracLeft = leftAmt / 100; fracRight = rightAmt / 100;
+} else if (unit === 'PX') {
+fracTop = topAmt / card.originalHeight; fracBottom = bottomAmt / card.originalHeight; fracLeft = leftAmt / card.originalWidth; fracRight = rightAmt / card.originalWidth;
+} else {
+var cardPrintW_mm = convertToMm(state.cardSettings.width, state.cardSettings.unit) || 54;
+var cardPrintH_mm = convertToMm(state.cardSettings.height, state.cardSettings.unit) || 86;
+fracTop = convertToMm(topAmt, unit) / cardPrintH_mm;
+fracBottom = convertToMm(bottomAmt, unit) / cardPrintH_mm;
+fracLeft = convertToMm(leftAmt, unit) / cardPrintW_mm;
+fracRight = convertToMm(rightAmt, unit) / cardPrintW_mm;
+}
+var c = card.crop || { nx: 0, ny: 0, nw: 1, nh: 1 };
+var nx = Math.max(0, Math.min(0.95, c.nx + fracLeft));
+var ny = Math.max(0, Math.min(0.95, c.ny + fracTop));
+var nw = Math.max(0.05, Math.min(1 - nx, c.nw - fracLeft - fracRight));
+var nh = Math.max(0.05, Math.min(1 - ny, c.nh - fracTop - fracBottom));
+card.crop = { nx: nx, ny: ny, nw: nw, nh: nh };
+updateCardThumbnail(card);
+applied++;
+}
+}
+renderCardListUI();
+updateSheetLayout();
+showToastNotification(applied + ' টি কার্ডে সিলেক্টিভ ক্রপ সফল হয়েছে!');
+}
+function onStrokeTargetChange() {
+var val = document.getElementById('strokeTargetType').value;
+document.getElementById('strokeCardsInputGroup').style.display = (val !== 'ALL') ? 'block' : 'none';
+}
+function applyStroke() {
+var targetType = document.getElementById('strokeTargetType').value;
+var widthVal = parseFloat(document.getElementById('strokeWidthInput').value) || 0;
+var widthUnit = document.getElementById('strokeWidthUnit').value;
+var color = document.getElementById('strokeColorInput').value;
+var strokeConfig = {
+widthPx: widthUnit === 'MM' ? (convertToMm(widthVal, 'MM') / MM_PER_INCH) * DPI_SCREEN : widthVal,
+color: color
+};
+if (targetType === 'ALL') {
+state.stroke = Object.assign({ targetType: 'ALL' }, strokeConfig);
+for (var i = 0; i < state.cards.length; i++) { state.cards[i].stroke = Object.assign({}, strokeConfig); }
+} else {
+var list = parseCardNumberList(document.getElementById('strokeCardsInput').value);
+for (var j = 0; j < state.cards.length; j++) {
+if (list.indexOf(state.cards[j].cardNum) !== -1) { state.cards[j].stroke = Object.assign({}, strokeConfig); }
+}
+}
+updateSheetLayout();
+showToastNotification('বর্ডার স্ট্রোক প্রযোজ্য হয়েছে!');
+}
+function applyCardSettings() {
+state.cardSettings.width = parseFloat(document.getElementById('cardWidthInput').value) || 54;
+state.cardSettings.height = parseFloat(document.getElementById('cardHeightInput').value) || 86;
+state.cardSettings.unit = document.getElementById('cardDimUnit').value;
+state.cardSettings.gapH = parseFloat(document.getElementById('cardGapHInput').value) || 3;
+state.cardSettings.gapV = parseFloat(document.getElementById('cardGapVInput').value) || 3;
+state.cardSettings.gapUnit = document.getElementById('cardGapUnit').value;
+updateSheetLayout();
+showToastNotification('কার্ড সাইজ ও গ্যাপ আপডেট হয়েছে!');
+}
+function setPresetPage(preset) {
+state.page.preset = preset;
+var w = 210, h = 297;
+if (preset === 'A4') { w = 210; h = 297; }
+else if (preset === 'A3') { w = 297; h = 420; }
+else if (preset === 'A5') { w = 148; h = 210; }
+else if (preset === 'LETTER') { w = 215.9; h = 279.4; }
+else if (preset === 'LEGAL') { w = 215.9; h = 355.6; }
+if (state.page.orientation === 'landscape') { var tmp = w; w = h; h = tmp; }
+state.page.width = w; state.page.height = h; state.page.unit = 'MM';
+document.getElementById('pageWidthInput').value = w;
+document.getElementById('pageHeightInput').value = h;
+document.getElementById('pageSizeUnit').value = 'MM';
+updateSheetLayout();
+}
+function onPageOrientationChange() {
+state.page.orientation = document.getElementById('pageOrientation').value;
+setPresetPage(state.page.preset);
+}
+function applyPageSettings() {
+state.page.width = parseFloat(document.getElementById('pageWidthInput').value) || 210;
+state.page.height = parseFloat(document.getElementById('pageHeightInput').value) || 297;
+state.page.unit = document.getElementById('pageSizeUnit').value;
+state.page.marginTop = parseFloat(document.getElementById('marginTopInput').value) || 5;
+state.page.marginBottom = parseFloat(document.getElementById('marginBottomInput').value) || 5;
+state.page.marginLeft = parseFloat(document.getElementById('marginLeftInput').value) || 5;
+state.page.marginRight = parseFloat(document.getElementById('marginRightInput').value) || 5;
+state.page.marginUnit = document.getElementById('marginUnit').value;
+updateSheetLayout();
+showToastNotification('পেজ সেটিংস আপডেট হয়েছে!');
+}
+function applyHeader() {
+state.header.text = document.getElementById('headerTextInput').value;
+state.header.height = parseFloat(document.getElementById('headerHeightInput').value) || 0;
+state.header.unit = document.getElementById('headerHeightUnit').value;
+updateSheetLayout();
+}
+function applyFooter() {
+state.footer.text = document.getElementById('footerTextInput').value;
+state.footer.height = parseFloat(document.getElementById('footerHeightInput').value) || 0;
+state.footer.unit = document.getElementById('footerHeightUnit').value;
+updateSheetLayout();
+}
+document.getElementById('bgColorInput').addEventListener('input', function(e) { document.getElementById('bgColorHex').value = e.target.value; });
+document.getElementById('bgColorHex').addEventListener('input', function(e) { document.getElementById('bgColorInput').value = e.target.value; });
+document.getElementById('bgImageInput').addEventListener('change', function(e) {
+if (e.target.files && e.target.files[0]) {
+loadImageFromFile(e.target.files[0]).then(function(img) { state.background.image = img; updateSheetLayout(); });
+}
+});
+function applyBackground() {
+state.background.color = document.getElementById('bgColorHex').value;
+updateSheetLayout();
+}
+document.getElementById('logoImageInput').addEventListener('change', function(e) {
+if (e.target.files && e.target.files[0]) {
+loadImageFromFile(e.target.files[0]).then(function(img) {
+state.logo.image = img;
+state.logo.aspectRatio = img.naturalWidth / img.naturalHeight;
+updateSheetLayout();
+});
+}
+});
+function onLogoControlsChange() {
+state.logo.width = parseFloat(document.getElementById('logoWidthInput').value) || 30;
+state.logo.height = parseFloat(document.getElementById('logoHeightInput').value) || 30;
+state.logo.unit = document.getElementById('logoUnit').value;
+state.logo.x = parseFloat(document.getElementById('logoXInput').value) || 10;
+state.logo.y = parseFloat(document.getElementById('logoYInput').value) || 10;
+state.logo.opacity = parseInt(document.getElementById('logoOpacityInput').value, 10);
+updateSheetLayout();
+}
+function applyLogo() { onLogoControlsChange(); showToastNotification('লোগো প্রযোজ্য হয়েছে!'); }
+function adjustAllLogo() { onLogoControlsChange(); showToastNotification('লোগো সব পেজে সিঙ্ক করা হয়েছে!'); }
+function updateSheetLayout() {
+var rowPatternRaw = document.getElementById('rowLayoutInput').value;
+var parsedPattern = parseCardNumberList(rowPatternRaw);
+state.rowPattern = parsedPattern.length > 0 ? parsedPattern : [5, 5];
+var selectedCards = [];
+for (var i = 0; i < state.cards.length; i++) {
+if (state.selectedCardIds.has(state.cards[i].id)) { selectedCards.push(state.cards[i]); }
+}
+if (selectedCards.length === 0) {
+state.pagesData = [];
+document.getElementById('pageCountLabel').innerText = 'Pages: 0';
+renderSheetPagesPreview();
+return;
+}
+var pageW_mm = convertToMm(state.page.width, state.page.unit);
+var pageH_mm = convertToMm(state.page.height, state.page.unit);
+var mTop_mm = convertToMm(state.page.marginTop, state.page.marginUnit);
+var mBot_mm = convertToMm(state.page.marginBottom, state.page.marginUnit);
+var mLeft_mm = convertToMm(state.page.marginLeft, state.page.marginUnit);
+var mRight_mm = convertToMm(state.page.marginRight, state.page.marginUnit);
+var headerH_mm = convertToMm(state.header.height, state.header.unit);
+var footerH_mm = convertToMm(state.footer.height, state.footer.unit);
+var cardNominalW_mm = convertToMm(state.cardSettings.width, state.cardSettings.unit);
+var cardNominalH_mm = convertToMm(state.cardSettings.height, state.cardSettings.unit);
+var gapNominalH_mm = convertToMm(state.cardSettings.gapH, state.cardSettings.gapUnit);
+var gapNominalV_mm = convertToMm(state.cardSettings.gapV, state.cardSettings.gapUnit);
+var availW_mm = Math.max(10, pageW_mm - mLeft_mm - mRight_mm);
+var availH_mm = Math.max(10, pageH_mm - mTop_mm - mBot_mm - headerH_mm - footerH_mm);
+var allRowCardGroups = [];
+var cardCursor = 0, patternIdx = 0, maxCardsInAnyRow = 1;
+while (cardCursor < selectedCards.length) {
+var targetCountInRow = Math.max(1, state.rowPattern[patternIdx % state.rowPattern.length] || 1);
+patternIdx++;
+var rowCards = selectedCards.slice(cardCursor, cardCursor + targetCountInRow);
+if (rowCards.length === 0) break;
+allRowCardGroups.push(rowCards);
+if (rowCards.length > maxCardsInAnyRow) { maxCardsInAnyRow = rowCards.length; }
+cardCursor += rowCards.length;
+}
+var maxRowNominalW_mm = (maxCardsInAnyRow * cardNominalW_mm) + ((maxCardsInAnyRow - 1) * gapNominalH_mm);
+var scaleW = 1.0;
+if (state.stretchWidth) { scaleW = availW_mm / maxRowNominalW_mm; }
+else if (maxRowNominalW_mm > availW_mm) { scaleW = availW_mm / maxRowNominalW_mm; }
+var totalRowsCount = allRowCardGroups.length;
+var uniformScale = scaleW;
+if (state.forceOnePage && totalRowsCount > 0) {
+var totalNominalH_mm = (totalRowsCount * cardNominalH_mm) + ((totalRowsCount - 1) * gapNominalV_mm);
+var scaleH = 1.0;
+if (totalNominalH_mm > availH_mm) { scaleH = availH_mm / totalNominalH_mm; }
+uniformScale = state.stretchWidth ? scaleW : Math.min(scaleW, scaleH);
+}
+var cardW_mm = cardNominalW_mm * uniformScale;
+var cardH_mm = cardNominalH_mm * uniformScale;
+var gapH_mm = gapNominalH_mm * uniformScale;
+var gapV_mm = gapNominalV_mm * uniformScale;
+var totalActualH_mm = (totalRowsCount * cardH_mm) + (Math.max(0, totalRowsCount - 1) * gapV_mm);
+var verticalCenterOffset_mm = (state.forceOnePage && totalActualH_mm < availH_mm) ? ((availH_mm - totalActualH_mm) / 2) : 0;
+var pages = [];
+var currentPage = { pageIndex: 0, rows: [] };
+var currentY_mm = 0;
+for (var r = 0; r < allRowCardGroups.length; r++) {
+var currentRowCards = allRowCardGroups[r];
+var count = currentRowCards.length;
+var actualRowW_mm = (count * cardW_mm) + ((count - 1) * gapH_mm);
+if (!state.forceOnePage && currentPage.rows.length > 0 && (currentY_mm + cardH_mm) > availH_mm) {
+pages.push(currentPage);
+currentPage = { pageIndex: pages.length, rows: [] };
+currentY_mm = 0;
+}
+var startX_mm = mLeft_mm + ((availW_mm - actualRowW_mm) / 2);
+var startY_mm = mTop_mm + headerH_mm + verticalCenterOffset_mm + currentY_mm;
+var rowObj = { y_mm: startY_mm, height_mm: cardH_mm, cards: [] };
+for (var c = 0; c < count; c++) {
+var cardX_mm = startX_mm + c * (cardW_mm + gapH_mm);
+rowObj.cards.push({ card: currentRowCards[c], x_mm: cardX_mm, y_mm: startY_mm, w_mm: cardW_mm, h_mm: cardH_mm });
+}
+currentPage.rows.push(rowObj);
+currentY_mm += cardH_mm + gapV_mm;
+}
+if (currentPage.rows.length > 0 || pages.length === 0) { pages.push(currentPage); }
+state.pagesData = pages;
+document.getElementById('pageCountLabel').innerText = 'Pages: ' + pages.length;
+renderSheetPagesPreview();
+}
+function renderSheetPagesPreview() {
+var container = document.getElementById('canvasContainer');
+container.innerHTML = '';
+var dpr = Math.max(2, window.devicePixelRatio || 1);
+var pageW_css = unitToPixels(state.page.width, state.page.unit, DPI_SCREEN);
+var pageH_css = unitToPixels(state.page.height, state.page.unit, DPI_SCREEN);
+var previewDPI = DPI_SCREEN * dpr;
+for (var pIdx = 0; pIdx < state.pagesData.length; pIdx++) {
+var pageData = state.pagesData[pIdx];
+var pageWrapper = document.createElement('div');
+pageWrapper.className = 'sheet-page-wrapper';
+pageWrapper.style.width = pageW_css + 'px';
+pageWrapper.style.height = pageH_css + 'px';
+var canvas = document.createElement('canvas');
+canvas.className = 'sheet-canvas';
+canvas.width = Math.round(pageW_css * dpr);
+canvas.height = Math.round(pageH_css * dpr);
+canvas.style.width = pageW_css + 'px';
+canvas.style.height = pageH_css + 'px';
+drawSheetToCanvas(canvas, pageData, previewDPI, false);
+pageWrapper.appendChild(canvas);
+if (pIdx === 0 && state.logo.image) {
+var overlay = createInteractiveLogoOverlay();
+pageWrapper.appendChild(overlay);
+}
+container.appendChild(pageWrapper);
+}
+applyViewportTransform();
+}
+function drawSheetToCanvas(canvas, pageData, dpi, isExport) {
+var ctx = canvas.getContext('2d');
+function mmToPx(mm) { return (mm / MM_PER_INCH) * dpi; }
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
+ctx.fillStyle = state.background.color || '#ffffff';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+if (state.background.image) { ctx.drawImage(state.background.image, 0, 0, canvas.width, canvas.height); }
+var headerH_px = mmToPx(convertToMm(state.header.height, state.header.unit));
+if (headerH_px > 0 && state.header.text) {
+ctx.save();
+ctx.fillStyle = '#1e293b';
+ctx.font = 'bold ' + Math.round(headerH_px * 0.45) + 'px sans-serif';
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ctx.fillText(state.header.text, canvas.width / 2, headerH_px / 2);
+ctx.restore();
+}
+var footerH_px = mmToPx(convertToMm(state.footer.height, state.footer.unit));
+if (footerH_px > 0 && state.footer.text) {
+ctx.save();
+ctx.fillStyle = '#1e293b';
+ctx.font = 'bold ' + Math.round(footerH_px * 0.45) + 'px sans-serif';
+ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+ctx.fillText(state.footer.text, canvas.width / 2, canvas.height - (footerH_px / 2));
+ctx.restore();
+}
+for (var r = 0; r < pageData.rows.length; r++) {
+var row = pageData.rows[r];
+for (var cIdx = 0; cIdx < row.cards.length; cIdx++) {
+var item = row.cards[cIdx];
+var c = item.card;
+var x = mmToPx(item.x_mm), y = mmToPx(item.y_mm), w = mmToPx(item.w_mm), h = mmToPx(item.h_mm);
+var crop = c.crop || { nx: 0, ny: 0, nw: 1, nh: 1 };
+var srcX = Math.max(0, crop.nx * c.originalWidth);
+var srcY = Math.max(0, crop.ny * c.originalHeight);
+var srcW = Math.max(1, Math.min(c.originalWidth - srcX, crop.nw * c.originalWidth));
+var srcH = Math.max(1, Math.min(c.originalHeight - srcY, crop.nh * c.originalHeight));
+ctx.save();
+ctx.imageSmoothingEnabled = true;
+ctx.imageSmoothingQuality = 'high';
+ctx.drawImage(c.originalImg, srcX, srcY, srcW, srcH, x, y, w, h);
+var stroke = c.stroke || (state.stroke.targetType === 'ALL' ? state.stroke : null);
+if (stroke && stroke.widthPx > 0) {
+ctx.strokeStyle = stroke.color;
+ctx.lineWidth = stroke.widthPx * (dpi / DPI_SCREEN);
+ctx.strokeRect(x, y, w, h);
+}
+ctx.restore();
+}
+}
+if (state.logo.image) {
+var logoX_px = mmToPx(convertToMm(state.logo.x, state.logo.unit));
+var logoY_px = mmToPx(convertToMm(state.logo.y, state.logo.unit));
+var logoW_px = mmToPx(convertToMm(state.logo.width, state.logo.unit));
+var logoH_px = mmToPx(convertToMm(state.logo.height, state.logo.unit));
+ctx.save();
+ctx.globalAlpha = (state.logo.opacity || 100) / 100;
+ctx.drawImage(state.logo.image, logoX_px, logoY_px, logoW_px, logoH_px);
+ctx.restore();
+}
+}
+function createInteractiveLogoOverlay() {
+var overlay = document.createElement('div');
+overlay.className = 'page-interactive-overlay';
+var box = document.createElement('div');
+box.className = 'interactive-element active';
+function logoMmToPx(mm) { return (mm / MM_PER_INCH) * DPI_SCREEN; }
+function logoPxToMm(px) { return (px / DPI_SCREEN) * MM_PER_INCH; }
+var x = logoMmToPx(convertToMm(state.logo.x, state.logo.unit));
+var y = logoMmToPx(convertToMm(state.logo.y, state.logo.unit));
+var w = logoMmToPx(convertToMm(state.logo.width, state.logo.unit));
+var h = logoMmToPx(convertToMm(state.logo.height, state.logo.unit));
+box.style.left = x + 'px'; box.style.top = y + 'px'; box.style.width = w + 'px'; box.style.height = h + 'px';
+var handleTypes = ['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'];
+for (var i = 0; i < handleTypes.length; i++) {
+var hEl = document.createElement('div');
+hEl.className = 'resize-handle handle-' + handleTypes[i];
+hEl.setAttribute('data-handle', handleTypes[i]);
+box.appendChild(hEl);
+}
+var dragLogo = { isDragging: false, handle: null, startX: 0, startY: 0, initX: 0, initY: 0, initW: 0, initH: 0 };
+box.onpointerdown = function(e) {
+if (e.target.classList.contains('resize-handle')) {
+dragLogo.handle = e.target.getAttribute('data-handle');
+dragLogo.isDragging = false;
+} else {
+dragLogo.isDragging = true;
+dragLogo.handle = null;
+}
+dragLogo.startX = e.clientX; dragLogo.startY = e.clientY;
+dragLogo.initX = parseFloat(box.style.left) || 0;
+dragLogo.initY = parseFloat(box.style.top) || 0;
+dragLogo.initW = parseFloat(box.style.width) || 0;
+dragLogo.initH = parseFloat(box.style.height) || 0;
+box.setPointerCapture(e.pointerId);
+e.stopPropagation();
+};
+window.addEventListener('pointermove', function(e) {
+if (!dragLogo.isDragging && !dragLogo.handle) return;
+var vScale = state.viewport.scale || 1;
+var dx = (e.clientX - dragLogo.startX) / vScale;
+var dy = (e.clientY - dragLogo.startY) / vScale;
+if (dragLogo.isDragging) {
+box.style.left = Math.round(dragLogo.initX + dx) + 'px';
+box.style.top = Math.round(dragLogo.initY + dy) + 'px';
+state.logo.x = convertFromMm(logoPxToMm(parseFloat(box.style.left)), state.logo.unit);
+state.logo.y = convertFromMm(logoPxToMm(parseFloat(box.style.top)), state.logo.unit);
+document.getElementById('logoXInput').value = formatUnitVal(state.logo.x);
+document.getElementById('logoYInput').value = formatUnitVal(state.logo.y);
+} else if (dragLogo.handle) {
+var l = dragLogo.initX, t = dragLogo.initY, curW = dragLogo.initW, curH = dragLogo.initH;
+var hType = dragLogo.handle;
+if (hType.indexOf('e') !== -1) curW += dx;
+if (hType.indexOf('w') !== -1) { l += dx; curW -= dx; }
+if (hType.indexOf('s') !== -1) curH += dy;
+if (hType.indexOf('n') !== -1) { t += dy; curH -= dy; }
+if (state.logo.lockRatio && state.logo.aspectRatio) {
+if (hType.indexOf('e') !== -1 || hType.indexOf('w') !== -1) { curH = curW / state.logo.aspectRatio; }
+else { curW = curH * state.logo.aspectRatio; }
+}
+if (curW >= 15 && curH >= 15) {
+box.style.left = Math.round(l) + 'px'; box.style.top = Math.round(t) + 'px';
+box.style.width = Math.round(curW) + 'px'; box.style.height = Math.round(curH) + 'px';
+state.logo.width = convertFromMm(logoPxToMm(curW), state.logo.unit);
+state.logo.height = convertFromMm(logoPxToMm(curH), state.logo.unit);
+state.logo.x = convertFromMm(logoPxToMm(l), state.logo.unit);
+state.logo.y = convertFromMm(logoPxToMm(t), state.logo.unit);
+document.getElementById('logoWidthInput').value = formatUnitVal(state.logo.width);
+document.getElementById('logoHeightInput').value = formatUnitVal(state.logo.height);
+document.getElementById('logoXInput').value = formatUnitVal(state.logo.x);
+document.getElementById('logoYInput').value = formatUnitVal(state.logo.y);
+}
+}
+});
+window.addEventListener('pointerup', function() {
+if (dragLogo.isDragging || dragLogo.handle) {
+dragLogo.isDragging = false; dragLogo.handle = null;
+updateSheetLayout();
+}
+});
+overlay.appendChild(box);
+return overlay;
+}
+function setupSafeLogoInputBindings() {
+bindSafeNumberInput('logoWidthInput', function(val) {
+state.logo.width = val;
+if (state.logo.lockRatio && state.logo.aspectRatio) {
+state.logo.height = val / state.logo.aspectRatio;
+document.getElementById('logoHeightInput').value = formatUnitVal(state.logo.height);
+}
+updateSheetLayout();
+});
+bindSafeNumberInput('logoHeightInput', function(val) {
+state.logo.height = val;
+if (state.logo.lockRatio && state.logo.aspectRatio) {
+state.logo.width = val * state.logo.aspectRatio;
+document.getElementById('logoWidthInput').value = formatUnitVal(state.logo.width);
+}
+updateSheetLayout();
+});
+bindSafeNumberInput('logoXInput', function(val) { state.logo.x = val; updateSheetLayout(); });
+bindSafeNumberInput('logoYInput', function(val) { state.logo.y = val; updateSheetLayout(); });
+}
+function setupViewportInteractions() {
+var vp = document.getElementById('viewportArea');
+vp.addEventListener('pointerdown', function(e) {
+if (e.target.closest('.interactive-element') || e.target.closest('.resize-handle')) return;
+state.viewport.isPanning = true;
+state.viewport.startX = e.clientX - state.viewport.panX;
+state.viewport.startY = e.clientY - state.viewport.panY;
+vp.setPointerCapture(e.pointerId);
+});
+vp.addEventListener('pointermove', function(e) {
+if (!state.viewport.isPanning) return;
+state.viewport.panX = e.clientX - state.viewport.startX;
+state.viewport.panY = e.clientY - state.viewport.startY;
+applyViewportTransform();
+});
+function endPan() { state.viewport.isPanning = false; }
+vp.addEventListener('pointerup', endPan);
+vp.addEventListener('pointercancel', endPan);
+vp.addEventListener('wheel', function(e) {
+e.preventDefault();
+zoomChange(e.deltaY < 0 ? 0.1 : -0.1);
+}, { passive: false });
+}
+function zoomChange(delta) { zoomSet(Math.min(5, Math.max(0.15, state.viewport.scale + delta))); }
+function zoomSet(scaleVal) {
+state.viewport.scale = scaleVal;
+document.getElementById('zoomPercentage').innerText = Math.round(scaleVal * 100) + '%';
+applyViewportTransform();
+}
+function zoomReset() {
+var vp = document.getElementById('viewportArea');
+var vpWidth = vp.clientWidth || window.innerWidth || 400;
+var pageW_css = unitToPixels(state.page.width, state.page.unit, DPI_SCREEN);
+var fitScale = Math.min(1.0, Math.max(0.2, (vpWidth * 0.9) / pageW_css));
+state.viewport.scale = fitScale; state.viewport.panX = 0; state.viewport.panY = 0;
+document.getElementById('zoomPercentage').innerText = Math.round(fitScale * 100) + '%';
+applyViewportTransform();
+}
+function applyViewportTransform() {
+var container = document.getElementById('canvasContainer');
+container.style.transform = 'translate(' + state.viewport.panX + 'px, ' + state.viewport.panY + 'px) scale(' + state.viewport.scale + ')';
+}
+function downloadBlobSafely(blob, filename) {
+var url = URL.createObjectURL(blob);
+var link = document.createElement('a');
+link.href = url; link.download = filename;
+document.body.appendChild(link);
+link.click();
+setTimeout(function() { document.body.removeChild(link); URL.revokeObjectURL(url); }, 3000);
+}
+function exportImage(format, isHQ) {
+if (state.pagesData.length === 0) { showAppAlert('No Pages', 'No pages to export.'); return; }
+var dpi = parseInt(document.getElementById('exportDpiSelect').value, 10);
+showProgress('Rendering Ultra High-Resolution ' + format + ' (' + dpi + ' DPI)...');
+var pageIndex = 0;
+function processExportPage() {
+if (pageIndex >= state.pagesData.length) { hideProgress(); return; }
+var pageData = state.pagesData[pageIndex];
+var exportCanvas = document.createElement('canvas');
+exportCanvas.width = unitToPixels(state.page.width, state.page.unit, dpi);
+exportCanvas.height = unitToPixels(state.page.height, state.page.unit, dpi);
+drawSheetToCanvas(exportCanvas, pageData, dpi, true);
+var mime = format === 'PNG' ? 'image/png' : 'image/jpeg';
+var quality = isHQ ? 1.0 : 0.92;
+exportCanvas.toBlob(function(blob) {
+if (blob) { downloadBlobSafely(blob, 'CardSheet_Page_' + (pageIndex + 1) + '_' + dpi + 'DPI.' + format.toLowerCase()); }
+pageIndex++;
+setTimeout(processExportPage, 250);
+}, mime, quality);
+}
+processExportPage();
+}
+function exportOriginalCroppedCards() {
+var selectedCards = [];
+for (var i = 0; i < state.cards.length; i++) {
+if (state.selectedCardIds.has(state.cards[i].id)) { selectedCards.push(state.cards[i]); }
+}
+if (selectedCards.length === 0) { showAppAlert('No Cards', 'Please select at least one card to export.'); return; }
+showProgress('Exporting original full-resolution cropped cards...');
+var idx = 0;
+function processSingleCard() {
+if (idx >= selectedCards.length) { hideProgress(); return; }
+var card = selectedCards[idx];
+showProgress('Exporting card ' + (idx + 1) + ' / ' + selectedCards.length + '...');
+var crop = card.crop || { nx: 0, ny: 0, nw: 1, nh: 1 };
+var cropX = Math.round(crop.nx * card.originalWidth);
+var cropY = Math.round(crop.ny * card.originalHeight);
+var cropW = Math.round(crop.nw * card.originalWidth);
+var cropH = Math.round(crop.nh * card.originalHeight);
+var singleCanvas = document.createElement('canvas');
+singleCanvas.width = cropW; singleCanvas.height = cropH;
+var ctx = singleCanvas.getContext('2d');
+ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+ctx.drawImage(card.originalImg, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+singleCanvas.toBlob(function(blob) {
+if (blob) { downloadBlobSafely(blob, 'Card_' + card.cardNum + '_Original_Crop.png'); }
+idx++;
+setTimeout(processSingleCard, 200);
+}, 'image/png', 1.0);
+}
+processSingleCard();
+}
+function previewPdfModal() {
+var container = document.getElementById('pdfPreviewContainer');
+container.innerHTML = '';
+var previewDpi = 150;
+for (var idx = 0; idx < state.pagesData.length; idx++) {
+var pageData = state.pagesData[idx];
+var wrapper = document.createElement('div');
+wrapper.style.boxShadow = '0 6px 25px rgba(0,0,0,0.8)'; wrapper.style.background = '#fff';
+var canvas = document.createElement('canvas');
+canvas.width = unitToPixels(state.page.width, state.page.unit, previewDpi);
+canvas.height = unitToPixels(state.page.height, state.page.unit, previewDpi);
+canvas.style.maxWidth = '100%'; canvas.style.height = 'auto'; canvas.style.display = 'block';
+drawSheetToCanvas(canvas, pageData, previewDpi, false);
+wrapper.appendChild(canvas);
+var label = document.createElement('div');
+label.style.textAlign = 'center'; label.style.padding = '8px'; label.style.color = '#94a3b8'; label.style.fontSize = '0.85rem';
+label.innerText = 'Page ' + (idx + 1) + ' of ' + state.pagesData.length;
+wrapper.appendChild(label);
+container.appendChild(wrapper);
+}
+document.getElementById('pdfPreviewModal').classList.add('active');
+}
+function closePdfPreviewModal() { document.getElementById('pdfPreviewModal').classList.remove('active'); }
+function ensureJsPdfLoaded(callback) {
+if (window.jspdf && window.jspdf.jsPDF) { callback(window.jspdf.jsPDF); return; }
+showProgress('Loading PDF library...');
+var script = document.createElement('script');
+script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+script.onload = function() {
+hideProgress();
+if (window.jspdf && window.jspdf.jsPDF) { callback(window.jspdf.jsPDF); }
+else { showAppAlert('PDF Library', 'jsPDF could not be initialized.'); }
+};
+script.onerror = function() {
+hideProgress();
+showAppAlert('Offline Notice', 'অফলাইনে jsPDF লোড করা যায়নি। অনুগ্রহ করে HQ PNG ব্যবহার করুন।');
+};
+document.head.appendChild(script);
+}
+function exportFullPdf() {
+if (state.pagesData.length === 0) { showAppAlert('No Pages', 'No pages to export.'); return; }
+ensureJsPdfLoaded(function(jsPDF) {
+var dpi = parseInt(document.getElementById('exportDpiSelect').value, 10);
+showProgress('Generating Multi-Page PDF...');
+var pageW_mm = convertToMm(state.page.width, state.page.unit);
+var pageH_mm = convertToMm(state.page.height, state.page.unit);
+var orientation = pageW_mm > pageH_mm ? 'landscape' : 'portrait';
+var doc = new jsPDF({ orientation: orientation, unit: 'mm', format: [pageW_mm, pageH_mm] });
+var pageIdx = 0;
+function addPdfPage() {
+if (pageIdx >= state.pagesData.length) {
+var pdfBlob = doc.output('blob');
+downloadBlobSafely(pdfBlob, 'CardSheets_' + state.pagesData.length + '_Pages.pdf');
+hideProgress();
+return;
+}
+showProgress('Rendering Page ' + (pageIdx + 1) + ' / ' + state.pagesData.length + '...');
+if (pageIdx > 0) { doc.addPage([pageW_mm, pageH_mm], orientation); }
+var exportCanvas = document.createElement('canvas');
+exportCanvas.width = unitToPixels(state.page.width, state.page.unit, dpi);
+exportCanvas.height = unitToPixels(state.page.height, state.page.unit, dpi);
+drawSheetToCanvas(exportCanvas, state.pagesData[pageIdx], dpi, true);
+var imgData = exportCanvas.toDataURL('image/jpeg', 0.98);
+doc.addImage(imgData, 'JPEG', 0, 0, pageW_mm, pageH_mm, undefined, 'FAST');
+pageIdx++;
+setTimeout(addPdfPage, 80);
+}
+addPdfPage();
+});
+}
+function toggleSection(headerEl) { headerEl.parentElement.classList.toggle('open'); }
+function showProgress(msg) {
+var el = document.getElementById('progressBarNotification');
+document.getElementById('progressText').innerText = msg;
+el.style.display = 'flex';
+}
+function hideProgress() { document.getElementById('progressBarNotification').style.display = 'none'; }
+function resetProjectConfirm() {
+showAppConfirm('Reset Project', 'Are you sure you want to reset all cards, templates, and layouts?', function() {
+state.cards = []; state.selectedCardIds.clear(); state.cropTemplate = null; state.pagesData = [];
+renumberCards(); renderCardListUI(); updateSheetLayout();
+showToastNotification('Project reset successfully.');
+});
+}
+function initApp() {
+setupViewportInteractions();
+setupManualCropInputBindings();
+setupSafeLogoInputBindings();
+setPresetPage('A4');
+updateSheetLayout();
+if (window.innerWidth <= 900) { setAppViewMode('split'); }
+else { zoomReset(); }
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initApp); }
+else { initApp(); }
+</script>
+</body>
+</html>
